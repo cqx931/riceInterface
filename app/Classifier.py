@@ -38,7 +38,7 @@ class Classifier:
     # ---------------------------------------------- #
     
     # brighter image for outer contour detection 
-    img_lighter = equalizeLight(img_out, 20)
+    img_lighter = img_out # equalizeLight(img_out, 20)
     
     img_otsu = otsu_thresholding(img_lighter)
     
@@ -55,7 +55,7 @@ class Classifier:
     img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
     
     # darker image for island detection
-    img_darker = equalizeLight(img_masked, -10)
+    img_darker = img_out # equalizeLight(img_masked, -10)
 
     inner_contours = getInnerIslands(img_darker, outer_contour)
 
