@@ -6,7 +6,7 @@
 - No. & Position Info of **Faults**("<")
 
 ### Pattern Analysis
-- Possible to tell the difference between "*|*" and "|**" (or even "**|" if a coordination can be set)?
+- Possible to tell the difference between \*|* and \|** (or even \**| if a coordination can be set)?
 
 ### Text Cases
 - TBA
