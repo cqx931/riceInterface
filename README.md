@@ -1,6 +1,14 @@
 # riceInterface
 Exhibition interface for the rice project
 
+### Architecture
+```
+raspberry pi cam -> mjpg streamer -> python opencv analyzer
+                                         | [socket communication]
+                                  -> web interface
+```
+
+### Setup Info
 Streaming Resolution: 1920 x 1080  
 Screen Resolution: 1440 x 2560
 
