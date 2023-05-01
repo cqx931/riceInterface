@@ -37,16 +37,19 @@ raspberry pi cam -> mjpg streamer -> python opencv analyzer
 - [rice_tsne](https://colab.research.google.com/drive/1dMf2GaFHH_nvtReOu49NmBqYSepYniiX?usp=sharing#scrollTo=rW8AwjDf8hh_)
 
 ## Setup Info
+
 Streaming Resolution: 1920 x 1080  
 Screen Resolution: 1440 x 2560
 
 Streaming Web Interface:
 http://192.168.1.22:8080/index.html
 
-TP LINK Router IP:
-http://192.168.1.253/  
+### TP LINK Router IP:
+```
+http://192.168.1.253/
 ssid: rice  
 password: masterProject  
 static ip 192.168.1.22  
 router: http://192.168.1.253/  
-nameserver 192.168.1.253  
+nameserver 192.168.1.253
+```
