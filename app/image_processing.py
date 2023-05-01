@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 from utils import ccw
-import dip.image as im
+# import dip.image as im
 
 ISLAND_SIZE_TRESHOLD = 20000
 
