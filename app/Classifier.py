@@ -31,7 +31,9 @@ class Classifier:
   def process(self, img_raw):
     
     img_out = img_raw.copy()
-    img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
+    print(len(img_out.shape))
+    if (len(img_out.shape) == 1):
+      img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
     
     # ---------------------------------------------- #
     # outer contour
@@ -52,7 +54,9 @@ class Classifier:
     img_masked = getMaskedImage(img_raw, outer_contour)
     
     img_out = img_masked.copy()
-    img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
+
+    if (len(img_out.shape) == 1):
+      img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
     
     # darker image for island detection
     img_darker = img_out # equalizeLight(img_masked, -10)
