@@ -23,14 +23,15 @@ class Debug:
     square_size = math.ceil(math.sqrt(len(self.images)))
     num_rows = int(square_size)
     num_cols = int(square_size)
-    fig, axs = plt.subplots(nrows = num_rows, ncols = num_cols, figsize = (10, 8))
+    fig, axs = plt.subplots(nrows = num_rows, ncols = num_cols, figsize = (12, 12))
     i = 0
     for row in axs:
       for col in row:
-        # col.plot(x, y)
+        # only display images when they exist
         if i < len(self.images):
           col.imshow(self.images[i], 'gray')
           col.set_title(self.titles[i])
+        # hide all matplotlib stuff
         col.set_xticks([])
         col.set_yticks([])
         col.xaxis.set_tick_params(labelbottom=False)

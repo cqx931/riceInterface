@@ -65,21 +65,16 @@ def run_test_image():
   # cv2.waitKey(0)
 
 def run_random_image():
-  # load test image
-  for x in range(0, 20):
+  for i in range(0, 20):
+    # load test image
     path = getRandomFile(DATASET_PATH)
     img_raw = cv2.imread(path, 0)
-    debug.push_image(img_raw, "raw")
     img_out = classifier.run(img_raw)
+
+    # images for debug
+    # debug.push_image(img_raw, "raw")
     debug.push_image(img_out, "out")
   debug.display()
-  
-  # cv2.imshow("out", img_out)
-  # display debug images
-  # if debug_mode == True:
-  # close on any key press
-  # cv2.waitKey(0)
-  #cv2.destroyAllWindows()
 
 # run!
 init()

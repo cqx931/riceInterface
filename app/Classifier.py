@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-from Interpreter import Interpreter
+from Debug import debug
+from image_processing import *
 
 class Classifier:
 
@@ -15,13 +16,66 @@ class Classifier:
   # this function will run on main thread with new image every frame if its on exhibition mode
   # on debug mode, it will run 1 time per image and deplay results in bulk? or just 1 time per image
   def run(self, img_raw):
-    interpreter = Interpreter(img_raw)
-    # this is only for simple test
-    # if self.mode == 'test':
-    img_out = interpreter.test(img_raw)
-      # get test image
+    # this is only for simple test, writes "test" on the image
+    if self.mode == 'test':
+      img_out = self.test(img_raw)
+    else:
+      img_out = self.process(img_raw)
+    
     return img_out
   
   def get_results(self):
     return self.results
 
+  # process image
+  def process(self, img_raw):
+    
+    img_out = img_raw.copy()
+    img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
+    
+    # ---------------------------------------------- #
+    # outer contour
+    # ---------------------------------------------- #
+    
+    # brighter image for outer contour detection 
+    img_lighter = equalizeLight(img_out, 20)
+    
+    img_otsu = otsu_thresholding(img_lighter)
+    
+    outer_contour = findMaxContour(img_otsu)
+    rect = cv2.minAreaRect(outer_contour)
+    
+    # ---------------------------------------------- #
+    # inner islands
+    # ---------------------------------------------- #
+    
+    img_masked = getMaskedImage(img_raw, outer_contour)
+    
+    img_out = img_masked.copy()
+    img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
+    
+    # darker image for island detection
+    img_darker = equalizeLight(img_masked, -10)
+
+    inner_contours = getInnerIslands(img_darker, outer_contour)
+
+    # draw island detections
+    for c in inner_contours:
+      center, radius = cv2.minEnclosingCircle(c)
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (255, 0, 0), 3)
+      cv2.drawContours(img_out, [c], 0, (255,0,0), 2)
+    # draw rice contour
+    cv2.drawContours(img_out, [outer_contour], 0, (255,0,0), 2)
+    # draw bounding box
+    box = cv2.boxPoints(rect)
+    box = np.int0(box)
+    cv2.drawContours(img_out,[box],0,(0,0,255),10)
+    
+    return img_out
+
+  # opencv write text "test" on image
+  def test(self, img_input):
+    self.results = { 'test': 'test'}
+    self.img_out = img_input.copy()
+    cv2.putText(self.img_out, "test", (200,200), cv2.FONT_HERSHEY_SIMPLEX, 10, (255,0,0), 10)
+    return self.img_out
