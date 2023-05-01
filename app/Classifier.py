@@ -41,7 +41,9 @@ class Classifier:
   def process(self, img_raw):
     
     img_out = img_raw.copy()
-    img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
+    print(len(img_out.shape))
+    if (len(img_out.shape) == 1):
+      img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
     
     # ---------------------------------------------- #
     # outer contour
@@ -67,8 +69,13 @@ class Classifier:
     step_name = "island_contours"
     img_masked = getMaskedImage(img_raw, outer_contour)
     img_out = img_masked.copy()
-    img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
-    img_darker = img_out # equalizeLight(img_masked, -10) # darker image for island detection
+
+    if (len(img_out.shape) == 1):
+      img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
+    
+    # darker image for island detection
+    img_darker = img_out # equalizeLight(img_masked, -10)
+
     inner_contours = getInnerIslands(img_darker, outer_contour)
     self.layers.append({
       "name": step_name,

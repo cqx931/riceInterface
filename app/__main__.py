@@ -5,7 +5,6 @@ import argparse
 import os
 from dotenv import load_dotenv
 from utils import *
-import threading
 # from socket_connection import connectSocket
 from Classifier import Classifier
 import cv2
@@ -16,12 +15,14 @@ from socket_connection import SocketClient
 socketio_client = SocketClient()
 socketio_client.connect("http://localhost:3000")
 # sendSocketMessage("hello")
+import imutils
+import threading
 
 # load .env file
 load_dotenv()
 DATASET_PATH = os.environ.get("DATASET_PATH")
 TEST_IMAGE_PATH = os.environ.get("TEST_IMAGE_PATH")
-
+STREAM_SNAPSHOT = "http://192.168.1.22:8080/?action=snapshot"
 # full server url for connection to the socket
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
 
@@ -33,6 +34,7 @@ parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('-d', '--debug_mode', default=True, action='store_true')
 parser.add_argument('-t', '--test', default=False, action='store_true')
 parser.add_argument('-r', '--random', default=False, action='store_true')
+parser.add_argument('-s', '--stream', default=False, action='store_true')
 args = parser.parse_args()
 
 # arg variables
@@ -46,6 +48,8 @@ if args.test:
   classifier_mode = "test"
 if args.random:
   classifier_mode = "random"
+if args.stream:
+  classifier_mode = "stream"
 
 debug_images = {}
 
@@ -59,7 +63,25 @@ def init():
   if classifier_mode == "random":
     print("Running random")
     run_random_image()
+  if classifier_mode == "stream":
+    print("Running stream")
+    stream()
   
+
+def printTimer():
+  print(".")
+
+def stream():
+  def stream_still():
+    image = imutils.url_to_image(STREAM_SNAPSHOT)
+    img_raw = image
+    img_out = classifier.run(img_raw)
+    cv2.imshow("out", img_out)
+  # TODO: setInterval
+  # t = threading.Timer(2, printTimer)
+  # t.start()
+  stream_still()
+  cv2.waitKey(0)
 
 def run_test_image():
   # load test image
