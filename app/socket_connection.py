@@ -3,18 +3,32 @@ import socketio
 global socketClient
 is_connected = False
 
-def connectSocket(server_path):
-    try:
-        socketClient = socketio.Client()
-        socketClient.connect(server_path)
-    except socketio.exceptions.ConnectionError as err:
-        is_connected = False
-        print("Error on socket connection")
-    else:
-        is_connected = True
+class SocketClient:
+  
+  def __init__(self):
+    pass
+      
+  def on_connect():
+      print('connect')
 
-def sendData (textSound):
+  def on_disconnect():
+      print('disconnect')
+
+  def on_reconnect():
+      print('reconnect')
+
+  def connect(self, server_path):
     try:
-        socketClient.emit('test', 'moin')
-    except socketio.exceptions.BadNamespaceError as err:
-        print("error sending data", err)
+      self.socketClient = socketio.Client()
+      self.socketClient.connect(server_path)
+    except socketio.exceptions.ConnectionError as err:
+      self.is_connected = False
+      print("Error on socket connection")
+    else:
+      self.is_connected = True
+
+  def sendMessage(self, message, data):
+    if (self.is_connected == False):
+      print("socket not connected")
+      return False
+    self.socketClient.emit(message, data)

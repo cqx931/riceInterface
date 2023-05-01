@@ -6,10 +6,16 @@ import os
 from dotenv import load_dotenv
 from utils import *
 import threading
-from socket_connection import connectSocket
+# from socket_connection import connectSocket
 from Classifier import Classifier
 import cv2
 from Debug import debug
+from socket_connection import SocketClient
+# standard Python
+
+socketio_client = SocketClient()
+socketio_client.connect("http://localhost:3000")
+# sendSocketMessage("hello")
 
 # load .env file
 load_dotenv()
@@ -70,13 +76,19 @@ def run_random_image():
     path = getRandomFile(DATASET_PATH)
     img_raw = cv2.imread(path, 0)
     img_out = classifier.run(img_raw)
-
-    # images for debug
     # debug.push_image(img_raw, "raw")
     debug.push_image(img_out, "out")
+  sendResults()
   debug.display()
   
 def sendResults():
+  # TO DO, fix numpy array to json
+  # results = classifier.get_results()
+  # layers = classifier.get_layers()
+  # socketio_client.sendMessage('layers', layers)
+  #sendSocketMessage('results', results)
+
+  # print("layers", layers)
   # send results to server
   # print("sending results to server")
   # print(classifier.get_results())
