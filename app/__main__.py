@@ -17,7 +17,7 @@ DATASET_PATH = os.environ.get("DATASET_PATH")
 TEST_IMAGE_PATH = os.environ.get("TEST_IMAGE_PATH")
 
 # full server url for connection to the socket
-# server_url = "http://{}:{}/".format(FLASK_SERVER_IP, FLASK_SERVER_PORT)
+# server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
 
 # default values
 # foo = 0
@@ -75,6 +75,14 @@ def run_random_image():
     # debug.push_image(img_raw, "raw")
     debug.push_image(img_out, "out")
   debug.display()
+  
+def sendResults():
+  # send results to server
+  # print("sending results to server")
+  # print(classifier.get_results())
+  # connectSocket(server_url, classifier.get_results())
+  pass  
+
 
 # run!
 init()
