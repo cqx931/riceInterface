@@ -8,7 +8,8 @@ ISLAND_SIZE_TRESHOLD = 20000
 
 # otsu thresholding
 def otsu_thresholding(img):
-  img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+  if (len(img.shape) == 3):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
   # Otsu's thresholding after Gaussian filtering
   blur = cv2.GaussianBlur(img,(5,5),0)
   ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
