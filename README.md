@@ -8,6 +8,15 @@ raspberry pi cam -> mjpg streamer -> python opencv analyzer
                                   -> web interface
 ```
 
+### Related Repo
+- [mjpg-streamer](https://github.com/cqx931/mjpg-streamer)
+- [masterProject](https://github.com/cqx931/masterProject)
+
+# Colab Experiments
+- [rice](https://colab.research.google.com/drive/1altnQe2wf7Ele74IKrhHKjxIN2zCHZoU#scrollTo=BG08-HZ5vANw)
+- [ricev2](https://colab.research.google.com/drive/1Ay9ZPEoNlbPBK2T2aXBxXJvVtoiKFKdG)
+- [rice_tsne](https://colab.research.google.com/drive/1dMf2GaFHH_nvtReOu49NmBqYSepYniiX?usp=sharing#scrollTo=rW8AwjDf8hh_)
+
 ### Setup Info
 Streaming Resolution: 1920 x 1080  
 Screen Resolution: 1440 x 2560
