@@ -3,7 +3,7 @@ import numpy as np
 from Debug import debug
 from image_processing import *
 import json
-from json import JSONEncoder
+from utils import *
 
 class Classifier:
 
@@ -28,14 +28,10 @@ class Classifier:
     return img_out
   
   def get_results(self):
-    # numpyData = {"results": self.layers}
-    json_object = json.dumps(self.layers, indent = 4) 
-    return json_object
+    return self.results
 
   def get_layers(self):
-    #numpyData = {"layers": self.layers}
-    json_object = json.dumps(self.layers)
-    return json_object
+    return self.layers
   
   # process image
   def process(self, img_raw):
@@ -55,11 +51,12 @@ class Classifier:
     img_otsu = otsu_thresholding(img_lighter)
     outer_contour = findMaxContour(img_otsu)
     rect = cv2.minAreaRect(outer_contour)
+    # convert contour to json object
     step_name = "island_circles"
     self.layers.append({
       "name": step_name,
-      "type": "contour",
-      "data": outer_contour
+      "type": "contours",
+      "data": json.dumps([outer_contour], cls=NumpyArrayEncoder)
     })
     
     # ---------------------------------------------- #
@@ -79,8 +76,8 @@ class Classifier:
     inner_contours = getInnerIslands(img_darker, outer_contour)
     self.layers.append({
       "name": step_name,
-      "type": "contour",
-      "data": inner_contours
+      "type": "contours",
+      "data": json.dumps(inner_contours, cls=NumpyArrayEncoder)
     })
     
     # ---------------------------------------------- #
@@ -104,15 +101,15 @@ class Classifier:
     step_name = "bounding_box"
     self.layers.append({
       "name": step_name,
-      "type": "contour",
-      "data": [box]
+      "type": "contours",
+      "data": json.dumps([box], cls=NumpyArrayEncoder)
     })
     
     step_name = "island_circles"
     self.layers.append({
       "name": step_name,
       "type": "circle",
-      "data": circles
+      "data": json.dumps(circles, cls=NumpyArrayEncoder)
     })
 
     
