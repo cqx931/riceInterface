@@ -18,12 +18,12 @@ socketio_client.connect("http://localhost:3000")
 import imutils
 import threading
 import numpy as np
-import requests
 # load .env file
 load_dotenv()
 DATASET_PATH = os.environ.get("DATASET_PATH")
 TEST_IMAGE_PATH = os.environ.get("TEST_IMAGE_PATH")
-STREAM_SNAPSHOT = "http://192.168.1.22:8080/?action=snapshot"
+RASPBERRY_PI = "192.168.1.22"
+STREAM_SNAPSHOT = "http://" + RASPBERRY_PI + ":8080/?action=snapshot"
 # full server url for connection to the socket
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
 
@@ -70,13 +70,9 @@ def init():
     stream()
   
 
-def printTimer():
-  print(".")
-
-
 def stream():
   # TODO: try if there is a connection
-    # run
+
   lastFrame = None
   while stream_on:
     image = imutils.url_to_image(STREAM_SNAPSHOT)
@@ -90,8 +86,6 @@ def stream():
     if cv2.waitKey(1) & 0xFF == ord('q'):
       break
 
-  
-  
 
 def run_test_image():
   # load test image
