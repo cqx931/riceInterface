@@ -93,13 +93,14 @@ def run_test_image():
   # cv2.waitKey(0)
 
 def run_random_image():
-  # for i in range(0, 20):
-  # load test image
-  path = getRandomFile(DATASET_PATH)
-  img_raw = cv2.imread(path, 0)
-  img_out = classifier.run(img_raw)
-  debug.push_image(img_raw, "raw")
-  debug.push_image(img_out, "out")
+  for i in range(0, 4):
+    # load test image
+    path = getRandomFile(DATASET_PATH)
+    print("random image file", path)
+    img_raw = cv2.imread(path, 0)
+    img_out = classifier.run(img_raw)
+    # debug.push_image(img_raw, "raw")
+    debug.push_image(img_out, "out")
   sendResults()
   debug.display()
   
@@ -108,7 +109,7 @@ def sendResults():
   # results = classifier.get_results()
   layers = classifier.get_layers()
   socketio_client.sendMessage('layers', layers)
-  #sendSocketMessage('results', results)
+  # sendSocketMessage('results', results)
 
   # print("layers", layers)
   # send results to server

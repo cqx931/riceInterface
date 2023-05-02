@@ -4,7 +4,7 @@ import numpy as np
 from utils import ccw
 # import dip.image as im
 
-ISLAND_SIZE_TRESHOLD = 20000
+ISLAND_SIZE_TRESHOLD = 2000
 
 # otsu thresholding
 def otsu_thresholding(img):
@@ -37,13 +37,10 @@ def getMaskedImage (img_raw, contour):
   return img_masked
 
 # return array of contours of the inner islands of the rice
-def getInnerIslands (img_masked, contour):
-  
-  # preprocess image
-  _, img_binary = cv2.threshold(img_masked, 125, 255, cv2.THRESH_BINARY)
+def getInnerIslands (img_binary, contour):
   
   if len(img_binary.shape) > 2:
-    bw = cv2.cvtColor(img_binary, cv2.COLOR_RGB2GRAY)
+    bw = cv2.cvtColor(img_binary, cv2.COLOR_BGR2GRAY)
   else:
     bw = img_binary
   
@@ -112,23 +109,93 @@ def contour_intersect(cnt_ref,cnt_query):
           return True
     return False
   
-# def equalizeLight(img_raw, bright_change=-10, contrast_change=20):
-#   brightness = im.brightness(img_raw)
-# 
-#   # adjust the brightness for images that are too bright
-#   if brightness > 10:
-#       img_out = im.light(img_raw, bright=bright_change, contrast=0)
-# 
-#   # ref_image = im.light(image, bright=20, contrast=0)
-# 
-#   img_out = im.equalize_light(img_out, limit=1, grid=(2,2),gray=True)
-#   #image, alpha, beta = im.automatic_brightness_and_contrast(image,clip_hist_percent=10)
-# 
-#   # black_level = im.back_in_black(image)
-#   # if not black_level:
-#   #     image = cv2.bitwise_not(image)
-# 
-#   img_out = im.gauss_filter(img_out, (3,3))
-#   img_out = im.light(img_out, bright=0, contrast=20)
-#   
-#   return img_out
+def equalize_image(img):
+    # convert image to grayscale
+    if (len(img.shape) == 3):
+      img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    clip_limit=2.0
+    tile_grid_size=(8, 8)
+
+    # create CLAHE object with desired parameters
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
+
+    # apply CLAHE to grayscale image
+    equalized = clahe.apply(img)
+    
+    # perform histogram equalization on grayscale image
+    # equalized = cv2.equalizeHist(img)
+
+    # convert back to color image
+    equalized_image = cv2.cvtColor(equalized, cv2.COLOR_GRAY2BGR)
+
+    return equalized_image
+  
+def threshold_image(image, block_size=50, constant=2):
+    # convert image to grayscale
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # apply adaptive thresholding to grayscale image
+    thresh = cv2.adaptiveThreshold(image, 1, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, block_size, constant)
+
+    # invert the threshold image so that the most relatively bright elements are white
+    thresh = cv2.bitwise_not(thresh)
+
+
+    # apply the threshold to the original image to extract the bright elements
+    # result = cv2.bitwise_and(image, image, mask=thresh)
+
+    return thresh
+
+def threshold_and_mask(image, exclude_percent=8):
+  # convert image to grayscale
+  gray = image.copy()# cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+  gray = cv2.GaussianBlur(gray,(9,9),0)
+
+  
+  # apply Otsu's thresholding method
+  _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+  # calculate the histogram of the thresholded image
+  hist, _ = np.histogram(gray[thresh == 255], bins=256, range=[0, 256])
+
+  # calculate the cumulative sum of the histogram
+  cumsum = np.cumsum(hist)
+
+  # calculate the cumulative percentage of the histogram
+  cumsum_percent = (cumsum / cumsum[-1]) * 100
+
+  # find the threshold value that excludes the top exclude_percent% of the brightest pixels
+  threshold_value = np.argmax(cumsum_percent > (100 - exclude_percent))
+  
+  # create a binary mask that excludes the brightest pixels
+  _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY_INV)
+
+  # invert the value of the mask so that the brightest pixels are white
+  inverted = cv2.bitwise_not(mask)
+
+  return inverted
+
+def detect_trace(image):
+  # apply Hough Line Transform to detect the trace
+  lines = cv2.HoughLinesP(image, rho=1, theta=np.pi/180, threshold=50, minLineLength=100, maxLineGap=10)
+
+  # extract the longest line detected
+  longest_line = None
+  longest_length = 0
+  for line in lines:
+      x1, y1, x2, y2 = line[0]
+      length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+      if length > longest_length:
+          longest_line = line
+          longest_length = length
+
+  # extract the vector of the longest line
+  x1, y1, x2, y2 = longest_line[0]
+  vector = np.array([x2-x1, y2-y1])
+  
+  
+
+  return longest_line, vector
