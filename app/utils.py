@@ -8,6 +8,11 @@ def getRandomFile(path):
   files = glob.glob(path + '/**/*.jpg', recursive=True)
   return random.choice(files)
 
+def getAllImages(path):
+  # Get List of all images
+  files = glob.glob(path + '/**/*.jpg', recursive=True)
+  return files
+
 def findFileInFolder(path, name):
   files = glob.glob(path + '/**/'+name+'.*', recursive=True)
   for file in files:

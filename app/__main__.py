@@ -25,6 +25,7 @@ load_dotenv()
 DATASET_PATH = os.environ.get("DATASET_PATH")
 TEST_IMAGE_PATH = os.environ.get("TEST_IMAGE_PATH")
 STREAM_SNAPSHOT = "http://192.168.1.22:8080/?action=snapshot"
+DATASET_EXPORT_PATH = "dataset_export/"
 # full server url for connection to the socket
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
 
@@ -38,7 +39,9 @@ parser.add_argument('-t', '--test', default=False, action='store_true')
 parser.add_argument('-r', '--random', default=False, action='store_true')
 parser.add_argument('-s', '--stream', default=False, action='store_true')
 parser.add_argument('-c', '--categories', default=False, action='store_true')
+parser.add_argument('-a', '--all_dataset', default=False, action='store_true')
 parser.add_argument('-sc', '--specific_category',  default=None, type=int)
+parser.add_argument('-S', '--save_file', default=False, action='store_true')
 args = parser.parse_args()
 
 # arg variables
@@ -52,12 +55,8 @@ specific_category = args.specific_category
 classifier_mode = "dataset"
 if args.test:
   classifier_mode = "test"
-if args.random:
-  classifier_mode = "random"
-if args.stream:
-  classifier_mode = "stream"
-if args.categories:
-  classifier_mode = "categories"
+else:
+  classifier_mode = "default"
 
 debug_images = {}
 
@@ -68,18 +67,21 @@ interpreter = Interpreter()
 
 def init(): 
   # start opencv
-  if classifier_mode == "test":
+  if args.test:
     print("Running test")
     run_test_image()
-  if classifier_mode == "random":
+  elif args.random:
     print("Running random")
     run_random_image()
-  if classifier_mode == "categories":
+  elif args.categories:
     print("Running random")
     run_categories_images(specific_category)
-  if classifier_mode == "stream":
+  elif args.stream:
     print("Running stream")
     stream()
+  elif args.all_dataset:
+    print("Running stream")
+    run_all_dataset()
   
 
 def printTimer():
@@ -121,7 +123,6 @@ def run_random_image():
   debug.display_images()
   
 def run_categories_images(specific_category = None):
-
   for c in interpreter.categories:
     if specific_category != None and c["index"] != specific_category:
       continue
@@ -138,7 +139,18 @@ def run_categories_images(specific_category = None):
   sendResults()
   debug.display_images()
     
-
+def run_all_dataset():
+  files = getAllImages(DATASET_PATH)
+  for i, f in enumerate(files):
+    img_raw = cv2.imread(f, 0)
+    img_out = classifier.run(img_raw)
+    filename = os.path.split(f)[1].split('.')[0] + "_opencv.jpg"
+    print("filename", filename)
+    # save image
+    if args.save_file:
+      cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
+  
+  
 def analyzeResults():
   results = interpreter.analyse(classifier.get_layers())
   

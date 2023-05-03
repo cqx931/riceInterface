@@ -2,6 +2,7 @@
 # *.png
 .env
 dataset/
+dataset_export/
 
 
 # Byte-compiled / optimized / DLL files
@@ -9,3 +10,6 @@ __pycache__/
 *.py[cod]
 
 *.DS_Store
+*.zip
+
+layers.json
