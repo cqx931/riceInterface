@@ -80,9 +80,6 @@ class Classifier:
     # img_out = img_masked.copy()
     if (len(img_out.shape) == 1):
       img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
-    
-    # darker image for island detection
-    # img_darker = img_out # equalizeLight(img_masked, -10)
 
     inner_contours = getInnerIslands(img_binary, outer_contour)
     self.layers.append({
@@ -108,6 +105,11 @@ class Classifier:
     #if lines is not None:
     if lines is not None:
       lines_a = filter_lines(lines, angle_range=[angle-20, angle+20], min_distance=100)
+      self.layers.append({
+        "name": "crack_lines",
+        "type": "lines",
+        "data": json.dumps(lines_a, cls=NumpyArrayEncoder)
+      })
       if lines_a is not None:
         for line in lines_a:
           x1, y1, x2, y2 = line[0]
@@ -117,8 +119,12 @@ class Classifier:
     # outer faults
     # ---------------------------------------------- #
     
-    img_out = fault_check(img_out, outer_contour)
-    
+    img_out, has_fault = fault_check(img_out, outer_contour)
+    self.layers.append({
+      "name": "fault_check",
+      "type": "lines",
+      "data": has_fault
+    })
     # ---------------------------------------------- #
     # draw things 
     # ---------------------------------------------- #
@@ -189,35 +195,3 @@ def filter_lines_by_angle(lines, angle, tolerance=10):
       filtered_lines.append(line)
 
   return filtered_lines
-
-def fault_check(img, outer_contour):
-  DIFF_AREA_THRESHOLD = 200000
-  
-  output = img.copy()
-  # output = cv2.cvtColor(output,cv2.COLOR_GRAY2BGR)
-
-  eps = 0.001
-
-  # approximate the contour
-  peri = cv2.arcLength(outer_contour, True)
-  approx = cv2.approxPolyDP(outer_contour, eps * peri, True)
-  # draw the approximated contour on the image
-
-  cv2.drawContours(output, [outer_contour], -1, (0, 255, 0), 10)
-  cv2.drawContours(output, [approx], -1, (255, 0, 0), 10)
-
-  hull = cv2.convexHull(outer_contour)
-  cv2.drawContours(output, [hull], 0, (0, 255, 0), 10)
-
-  minEllipse = cv2.fitEllipse(hull)
-  cv2.ellipse(output, minEllipse, (255, 0, 0), 3)
-
-  rice_area = cv2.contourArea(outer_contour)
-
-  diff_area = cv2.contourArea(hull) - rice_area
-  print("diff area", rice_area, diff_area, diff_area / rice_area)
-
-  if diff_area > DIFF_AREA_THRESHOLD:
-    print("big gap!")
-  
-  return output
