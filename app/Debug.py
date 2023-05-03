@@ -23,13 +23,16 @@ class Debug:
     square_size = math.ceil(math.sqrt(len(self.images)))
     num_rows = int(square_size)
     num_cols = int(square_size)
-    fig, axs = plt.subplots(nrows = num_rows, ncols = num_cols, figsize = (12, 12))
+    fig, axs = plt.subplots(nrows = num_rows, ncols = num_cols, figsize = (12, 9))
     i = 0
     for row in axs:
       for col in row:
         # only display images when they exist
         if i < len(self.images):
-          col.imshow(self.images[i], 'gray')
+          type = 'gray'
+          if (self.images[i].shape) == 3:
+            type = 'brg'
+          col.imshow(self.images[i], type)
           col.set_title(self.titles[i])
         # hide all matplotlib stuff
         col.set_xticks([])
@@ -42,5 +45,6 @@ class Debug:
         col.spines['left'].set_visible(False)
         i += 1
     plt.show()
+
 
 debug = Debug()
