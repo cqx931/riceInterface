@@ -19,13 +19,14 @@ socketio_client.connect("http://localhost:3000")
 # sendSocketMessage("hello")
 import imutils
 import threading
-
+import numpy as np
 # load .env file
 load_dotenv()
 DATASET_PATH = os.environ.get("DATASET_PATH")
 TEST_IMAGE_PATH = os.environ.get("TEST_IMAGE_PATH")
-STREAM_SNAPSHOT = "http://192.168.1.22:8080/?action=snapshot"
 DATASET_EXPORT_PATH = "dataset_export/"
+RASPBERRY_PI = "192.168.1.22"
+STREAM_SNAPSHOT = "http://" + RASPBERRY_PI + ":8080/?action=snapshot"
 # full server url for connection to the socket
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
 
@@ -64,6 +65,7 @@ debug_images = {}
 
 classifier = Classifier(classifier_mode)
 interpreter = Interpreter(classifier)
+stream_on = True
 
 def init(): 
   # start opencv
@@ -84,20 +86,22 @@ def init():
     run_all_dataset()
   
 
-def printTimer():
-  print(".")
-
 def stream():
-  def stream_still():
+  # TODO: try if there is a connection
+
+  lastFrame = None
+  while stream_on:
     image = imutils.url_to_image(STREAM_SNAPSHOT)
-    img_raw = image
-    img_out = classifier.run(img_raw)
+    if np.array_equal(image, lastFrame) :
+      img_out = image
+    else: # if anything changes
+      img_raw = image
+      img_out = classifier.run(img_raw)
+      lastFrame = image
     cv2.imshow("out", img_out)
-  # TODO: setInterval
-  # t = threading.Timer(2, printTimer)
-  # t.start()
-  stream_still()
-  cv2.waitKey(0)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+      break
+
 
 def run_test_image():
   # load test image
