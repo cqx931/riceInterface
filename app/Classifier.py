@@ -146,7 +146,7 @@ class Classifier:
     step_name = "bounding_box"
     self.layers.append({
       "name": step_name,
-      "type": "contours",
+      "type": "rect",
       "data": json.dumps([box], cls=NumpyArrayEncoder)
     })
     
