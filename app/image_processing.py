@@ -2,6 +2,8 @@
 import cv2
 import numpy as np
 from utils import ccw
+from math import atan2, cos, sin, sqrt, pi
+
 # import dip.image as im
 
 ISLAND_SIZE_TRESHOLD = 2000
@@ -180,22 +182,99 @@ def threshold_and_mask(image, exclude_percent=8):
 
 def detect_trace(image):
   # apply Hough Line Transform to detect the trace
-  lines = cv2.HoughLinesP(image, rho=1, theta=np.pi/180, threshold=50, minLineLength=100, maxLineGap=10)
+  lines = cv2.HoughLinesP(image, rho=1, theta=np.pi/180, threshold=50, minLineLength=500, maxLineGap=100)
 
   # extract the longest line detected
   longest_line = None
   longest_length = 0
-  for line in lines:
-      x1, y1, x2, y2 = line[0]
-      length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
-      if length > longest_length:
-          longest_line = line
-          longest_length = length
-
+    
+  if lines is not None:
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+        if length > longest_length:
+            longest_line = line
+            longest_length = length
+  if longest_line is None:
+    return None, lines
   # extract the vector of the longest line
   x1, y1, x2, y2 = longest_line[0]
   vector = np.array([x2-x1, y2-y1])
+  return longest_line, lines
   
+def filter_lines(lines, angle_range=[-180, 180], min_distance=10):
+  filtered_lines = []
+  for i, line1 in enumerate(lines):
+    x1, y1, x2, y2 = line1[0]
+    is_valid = True
+    for line2 in filtered_lines:
+      x3, y3, x4, y4 = line2[0]
+      d1 = np.linalg.norm(np.array([x1, y1]) - np.array([x3, y3]))
+      d2 = np.linalg.norm(np.array([x2, y2]) - np.array([x4, y4]))
+      d3 = np.linalg.norm(np.array([x1, y1]) - np.array([x4, y4]))
+      d4 = np.linalg.norm(np.array([x2, y2]) - np.array([x3, y3]))
+      if d1 < min_distance or d2 < min_distance or d3 < min_distance or d4 < min_distance:
+        is_valid = False
+        break
+    # Add line to filtered list if it passes all checks
+    if is_valid:
+      filtered_lines.append(line1)
+  return filtered_lines
   
-
-  return longest_line, vector
+def drawAxis(img, p_, q_, color, scale):
+  p = list(p_)
+  q = list(q_)
+ 
+  ## [visualization1]
+  angle = atan2(p[1] - q[1], p[0] - q[0]) # angle in radians
+  hypotenuse = sqrt((p[1] - q[1]) * (p[1] - q[1]) + (p[0] - q[0]) * (p[0] - q[0]))
+ 
+  # Here we lengthen the arrow by a factor of scale
+  q[0] = p[0] - scale * hypotenuse * cos(angle)
+  q[1] = p[1] - scale * hypotenuse * sin(angle)
+  cv2.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), color, 3, cv2.LINE_AA)
+ 
+  # create the arrow hooks
+  p[0] = q[0] + 9 * cos(angle + pi / 4)
+  p[1] = q[1] + 9 * sin(angle + pi / 4)
+  cv2.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), color, 3, cv2.LINE_AA)
+ 
+  p[0] = q[0] + 9 * cos(angle - pi / 4)
+  p[1] = q[1] + 9 * sin(angle - pi / 4)
+  cv2.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), color, 3, cv2.LINE_AA)
+  ## [visualization1]
+ 
+def getOrientation(pts, img):
+  ## [pca]
+  # Construct a buffer used by the pca analysis
+  sz = len(pts)
+  data_pts = np.empty((sz, 2), dtype=np.float64)
+  for i in range(data_pts.shape[0]):
+    data_pts[i,0] = pts[i,0,0]
+    data_pts[i,1] = pts[i,0,1]
+ 
+  # Perform PCA analysis
+  mean = np.empty((0))
+  mean, eigenvectors, eigenvalues = cv2.PCACompute2(data_pts, mean)
+ 
+  # Store the center of the object
+  cntr = (int(mean[0,0]), int(mean[0,1]))
+  ## [pca]
+ 
+  ## [visualization]
+  # Draw the principal components
+  cv2.circle(img, cntr, 3, (255, 0, 255), 2)
+  p1 = (cntr[0] + 0.02 * eigenvectors[0,0] * eigenvalues[0,0], cntr[1] + 0.02 * eigenvectors[0,1] * eigenvalues[0,0])
+  p2 = (cntr[0] - 0.02 * eigenvectors[1,0] * eigenvalues[1,0], cntr[1] - 0.02 * eigenvectors[1,1] * eigenvalues[1,0])
+  drawAxis(img, cntr, p1, (255, 255, 0), 1)
+  drawAxis(img, cntr, p2, (0, 0, 255), 5)
+ 
+  angle = atan2(eigenvectors[0,1], eigenvectors[0,0]) # orientation in radians
+  ## [visualization]
+ 
+  # Label with the rotation angle
+  label = "  Rotation Angle: " + str(-int(np.rad2deg(angle)) - 90) + " degrees"
+  textbox = cv2.rectangle(img, (cntr[0], cntr[1]-25), (cntr[0] + 250, cntr[1] + 10), (255,255,255), -1)
+  cv2.putText(img, label, (cntr[0], cntr[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
+ 
+  return angle
