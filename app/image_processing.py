@@ -180,13 +180,15 @@ def threshold_image(image, block_size=50, constant=2):
 
 def threshold_and_mask(image, exclude_percent=8):
     # convert image to grayscale
-    gray = image.copy()  # cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    if len(image.shape) > 2:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+      gray = image.copy()  # cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     gray = cv2.GaussianBlur(gray, (9, 9), 0)
 
     # apply Otsu's thresholding method
-    _, thresh = cv2.threshold(
-        image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     # calculate the histogram of the thresholded image
     hist, _ = np.histogram(gray[thresh == 255], bins=256, range=[0, 256])
@@ -209,33 +211,36 @@ def threshold_and_mask(image, exclude_percent=8):
     return inverted
 
 
-def detect_trace(image):
+def detect_trace(image, threshold=50, minLineLength=500, maxLineGap=500):
     # apply Hough Line Transform to detect the trace
     lines = cv2.HoughLinesP(image, rho=1, theta=np.pi/180,
-                            threshold=50, minLineLength=500, maxLineGap=500)
+                            threshold=threshold, minLineLength=minLineLength, maxLineGap=maxLineGap)
 
     # extract the longest line detected
     longest_line = None
     longest_length = 0
 
     if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
-            if length > longest_length:
-                longest_line = line
-                longest_length = length
+      for line in lines:
+        x1, y1, x2, y2 = line[0]
+        length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+        if length > longest_length:
+          longest_line = line
+          longest_length = length
     if longest_line is None:
-        return None, lines
+      return None, lines
     # extract the vector of the longest line
     x1, y1, x2, y2 = longest_line[0]
     vector = np.array([x2-x1, y2-y1])
-    return longest_line, lines
+    return lines
 
 
-def filter_lines_by_distance(lines, angle_range=[-180, 180], min_distance=10):
+def filter_lines_by_distance(lines, min_distance=10):
     filtered_lines = []
     for i, line1 in enumerate(lines):
+        # print("line1", line1)
+        if line1 is None:
+            continue
         x1, y1, x2, y2 = line1[0]
         is_valid = True
         for line2 in filtered_lines:
@@ -458,3 +463,47 @@ def find_intersection_points(lines1, lines2):
             intersection_y = int(y1 + ua * (y2 - y1))
             intersection_points.append((intersection_x, intersection_y))
     return intersection_points
+
+def find_circle_line_intersections(lines, circles):
+  intersecting_circles = []
+  non_intersecting_circles = []
+  
+  for circle in circles:
+    # Check if the circle intersects with any of the lines
+    intersects_line = False
+    for line in lines:
+      intersects_line = line_circle_intersection(line[0], circle)
+      if intersects_line:
+        break
+    # If the circle intersects with at least one line, add it to intersecting_circles
+    if intersects_line:
+      intersecting_circles.append(circle)
+    else:
+      non_intersecting_circles.append(circle)
+  
+  return intersecting_circles, non_intersecting_circles
+
+def line_circle_intersection(line, circle):
+    x1, y1, x2, y2 = line
+    (cx, cy), r = circle
+
+    dx = x2 - x1
+    dy = y2 - y1
+    a = dx * dx + dy * dy
+    b = 2 * (dx * (x1 - cx) + dy * (y1 - cy))
+    c = (x1 - cx) * (x1 - cx) + (y1 - cy) * (y1 - cy) - r * r
+    discriminant = b * b - 4 * a * c
+
+    if discriminant < 0:
+        # No intersection
+        return False
+    else:
+        # Compute the intersection(s)
+        t1 = (-b + sqrt(discriminant)) / (2 * a)
+        t2 = (-b - sqrt(discriminant)) / (2 * a)
+
+        # Check if the intersection points are within the line segment
+        if 0 <= t1 <= 1 or 0 <= t2 <= 1:
+            return True
+        else:
+            return False

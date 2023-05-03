@@ -63,7 +63,7 @@ debug_images = {}
 
 
 classifier = Classifier(classifier_mode)
-interpreter = Interpreter()
+interpreter = Interpreter(classifier)
 
 def init(): 
   # start opencv
@@ -117,7 +117,7 @@ def run_random_image():
     img_out = classifier.run(img_raw)
     # debug.push_image(img_raw, "raw")
     debug.push_image(img_out, "out")
-  sendResults()
+    sendResults()
   # analyzeResults()
   # debug.display()
   debug.display_images()
@@ -132,13 +132,16 @@ def run_categories_images(specific_category = None):
       # print("name", name, path)
       if path == None:
         break
-    img_raw = cv2.imread(path, 0)
-    img_out = classifier.run(img_raw)
-    text = c["example"][0] + " " + str(c["index"]) + " " + c["title"] + " " + c["symbol"]
-    debug.push_image(img_out, text)
+      img_raw = cv2.imread(path, 0)
+      img_out = classifier.run(img_raw)
+      text = c["example"][0] + " " + str(c["index"]) + " " + c["title"] + " " + c["symbol"]
+      debug.push_image(img_out, text)
   sendResults()
-  debug.display_images()
-    
+  if len(debug.images) % 8 == 0:
+    debug.display_images()
+  else:
+    debug.display()  
+  
 def run_all_dataset():
   files = getAllImages(DATASET_PATH)
   for i, f in enumerate(files):
@@ -157,7 +160,10 @@ def analyzeResults():
 def sendResults():
   # TO DO, fix numpy array to json
   # results = classifier.get_results()
-  layers = classifier.get_layers()
+  results = interpreter.analyse()
+  print("results", results)
+  layers = classifier.get_json_layers()
+  classifier.clear_layers()
   socketio_client.sendMessage('layers', layers)
   # sendSocketMessage('results', results)
 
