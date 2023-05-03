@@ -278,3 +278,33 @@ def getOrientation(pts, img):
   cv2.putText(img, label, (cntr[0], cntr[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1, cv2.LINE_AA)
  
   return angle
+
+def fault_check(img, outer_contour):
+  DIFF_AREA_THRESHOLD = 200000
+  
+  output = img.copy()
+  # output = cv2.cvtColor(output,cv2.COLOR_GRAY2BGR)
+
+  eps = 0.001
+
+  # approximate the contour
+  peri = cv2.arcLength(outer_contour, True)
+  approx = cv2.approxPolyDP(outer_contour, eps * peri, True)
+  # draw the approximated contour on the image
+
+  cv2.drawContours(output, [outer_contour], -1, (0, 255, 0), 10)
+  cv2.drawContours(output, [approx], -1, (255, 0, 0), 10)
+
+  hull = cv2.convexHull(outer_contour)
+  cv2.drawContours(output, [hull], 0, (0, 255, 0), 10)
+
+  minEllipse = cv2.fitEllipse(hull)
+  cv2.ellipse(output, minEllipse, (255, 0, 0), 3)
+
+  rice_area = cv2.contourArea(outer_contour)
+
+  diff_area = cv2.contourArea(hull) - rice_area
+  print("diff area", rice_area, diff_area, diff_area / rice_area)
+  has_fault = diff_area > DIFF_AREA_THRESHOLD
+  
+  return output, has_fault 
