@@ -8,8 +8,10 @@ from utils import *
 # from socket_connection import connectSocket
 from Classifier import Classifier
 import cv2
+# import json
 from Debug import debug
 from socket_connection import SocketClient
+from Interpreter import Interpreter
 # standard Python
 
 socketio_client = SocketClient()
@@ -22,6 +24,7 @@ import numpy as np
 load_dotenv()
 DATASET_PATH = os.environ.get("DATASET_PATH")
 TEST_IMAGE_PATH = os.environ.get("TEST_IMAGE_PATH")
+DATASET_EXPORT_PATH = "dataset_export/"
 RASPBERRY_PI = "192.168.1.22"
 STREAM_SNAPSHOT = "http://" + RASPBERRY_PI + ":8080/?action=snapshot"
 # full server url for connection to the socket
@@ -36,6 +39,10 @@ parser.add_argument('-d', '--debug_mode', default=True, action='store_true')
 parser.add_argument('-t', '--test', default=False, action='store_true')
 parser.add_argument('-r', '--random', default=False, action='store_true')
 parser.add_argument('-s', '--stream', default=False, action='store_true')
+parser.add_argument('-c', '--categories', default=False, action='store_true')
+parser.add_argument('-a', '--all_dataset', default=False, action='store_true')
+parser.add_argument('-sc', '--specific_category',  default=None, type=int)
+parser.add_argument('-S', '--save_file', default=False, action='store_true')
 args = parser.parse_args()
 
 # arg variables
@@ -43,31 +50,40 @@ debug_mode = args.debug_mode
 print("debug_mode", debug_mode)
 mode = 'random'
 
+specific_category = args.specific_category
+
 # setup classfier mode
 classifier_mode = "dataset"
 if args.test:
   classifier_mode = "test"
-if args.random:
-  classifier_mode = "random"
-if args.stream:
-  classifier_mode = "stream"
+else:
+  classifier_mode = "default"
 
 debug_images = {}
 
+
+
 classifier = Classifier(classifier_mode)
+interpreter = Interpreter(classifier)
 stream_on = True
 
 def init(): 
   # start opencv
-  if classifier_mode == "test":
+  if args.test:
     print("Running test")
     run_test_image()
-  if classifier_mode == "random":
+  elif args.random:
     print("Running random")
     run_random_image()
-  if classifier_mode == "stream":
+  elif args.categories:
+    print("Running random")
+    run_categories_images(specific_category)
+  elif args.stream:
     print("Running stream")
     stream()
+  elif args.all_dataset:
+    print("Running stream")
+    run_all_dataset()
   
 
 def stream():
@@ -97,7 +113,7 @@ def run_test_image():
   # cv2.waitKey(0)
 
 def run_random_image():
-  for i in range(0, 4):
+  for i in range(0, 16):
     # load test image
     path = getRandomFile(DATASET_PATH)
     print("random image file", path)
@@ -105,13 +121,53 @@ def run_random_image():
     img_out = classifier.run(img_raw)
     # debug.push_image(img_raw, "raw")
     debug.push_image(img_out, "out")
+    sendResults()
+  # analyzeResults()
+  # debug.display()
+  debug.display_images()
+  
+def run_categories_images(specific_category = None):
+  for c in interpreter.categories:
+    if specific_category != None and c["index"] != specific_category:
+      continue
+    path = findFileInFolder(DATASET_PATH, c["example"][0])
+    for name in c["example"]:
+      path = findFileInFolder(DATASET_PATH, name)
+      # print("name", name, path)
+      if path == None:
+        break
+      img_raw = cv2.imread(path, 0)
+      img_out = classifier.run(img_raw)
+      text = c["example"][0] + " " + str(c["index"]) + " " + c["title"] + " " + c["symbol"]
+      debug.push_image(img_out, text)
   sendResults()
-  debug.display()
+  if len(debug.images) % 8 == 0:
+    debug.display_images()
+  else:
+    debug.display()  
+  
+def run_all_dataset():
+  files = getAllImages(DATASET_PATH)
+  for i, f in enumerate(files):
+    img_raw = cv2.imread(f, 0)
+    img_out = classifier.run(img_raw)
+    filename = os.path.split(f)[1].split('.')[0] + "_opencv.jpg"
+    print("filename", filename)
+    # save image
+    if args.save_file:
+      cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
+  
+  
+def analyzeResults():
+  results = interpreter.analyse(classifier.get_layers())
   
 def sendResults():
   # TO DO, fix numpy array to json
   # results = classifier.get_results()
-  layers = classifier.get_layers()
+  results = interpreter.analyse()
+  print("results", results)
+  layers = classifier.get_json_layers()
+  classifier.clear_layers()
   socketio_client.sendMessage('layers', layers)
   # sendSocketMessage('results', results)
 

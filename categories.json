@@ -1,0 +1,115 @@
+
+[
+	{
+		"index": 1,
+		"title": "The Branches",
+		"symbol": "|=",
+		"example": ["p06_rice25", "p06_rice39"],
+		"text": "a vertical crack cut across multiple horizontal cracks in the middle of the surface, foretells a journey filled with many paths and possibilities."
+	},
+	{
+		"index": 2,
+		"title": "The Indecisive heart",
+		"symbol": "-_",
+		"example": ["p01_rice12", "p06_rice17"],
+		"text": "multiple half cracks that don't crack through the whole grain, a decision needs to be made so that the right path shall reveal"
+	},
+	{
+		"index": 3,
+		"title": "The Delicate Heart",
+		"symbol": "*",
+		"example": ["p09_rice04", "p09_rice06"],
+		"text": "warns of fragility and the need for cau tion and obstacles to be overcome."
+	},
+	{
+		"index": 4,
+		"title": "The Converging/Diverging Paths",
+		"symbol": "|/",
+		"example": ["p01_rice09", "p06_rice09"],
+		"text": "two lines meet in sharp angle, speaks of unexpected allies and the coming together of forces"
+	},
+	{
+		"index": 5,
+		"title": "Curvy lines",
+		"symbol": "~",
+		"example": ["p05_rice30"],
+		"text": "scattered curvy paths with unclear direction or tendency"
+	},
+	{
+		"index": 6,
+		"title": "Hidden Balance",
+		"symbol": "**",
+		"example": ["p07_rice09"],
+		"text": "two inner cracks that doesn't penetrate towards the surface(), a hidden but fragile balance is achieved at the current moment"
+	},
+	{
+		"index": 7,
+		"title": "The Mist",
+		"symbol": "()",
+		"example": ["p02_rice02", "p02_rice03"],
+		"text": "no clear sign cracks with uneven surface. The destiny is not set, everything is possible (no cracks/no island/no fault)"
+	},
+	{
+		"index": 8,
+		"title": "The Fragile Stem",
+		"symbol": "-",
+		"example": ["p03_rice11"],
+		"text": "a thin subtle crack that doesnt crack through, warns of a lean season ahead."
+	},
+	{
+		"index": 9,
+		"title": "The Clustered Five",
+		"symbol": "|||||",
+		"example": ["p04_rice39","p05_rice02"],
+		"text": "tightly packed on a single piece of rice, speaks of a crowded and bustling time to come."
+	},
+	{
+		"index": 10,
+		"title": "The Broken Cloud",
+		"symbol": "?",
+		"example": ["p01_rice26"],
+		"text": "rough and uneven surface, speaks of challenges and obstacles. (can identify sth but doesn't fill into any category)"
+	},
+	{
+		"index": 11,
+		"title": "The Divider",
+		"symbol": "|",
+		"example": ["p04_rice26", "p04_rice38"],
+		"text": "a clear horizontal crack the separate the grain into two almost identical halves, an indicator of a clear division that needs to be made"
+	},
+	{
+		"index": 12,
+		"title": "The Libra",
+		"symbol": "|",
+		"example": ["p08_rice09"],
+		"text": "two subtle signs of cracks split by a clear divider crack, showing a struggle between two things"
+	},
+	{
+		"index": 13,
+		"title": "The Teller",
+		"symbol": "<",
+		"example": ["p02_rice19","p02_rice41", "p03_rice16"],
+		"text": "a clear single crack the opens like a telling mouth, unspoken words need to be told and heard, the bigger the opening, the more needs to be shared"
+	},
+	{
+		"index": 14,
+		"title": "Mirror",
+		"symbol": "| |",
+		"example": ["p04_rice37", "p06_rice01"],
+		"text": "Two evenly distributed cracks, as if they are mirroring each other"
+	},
+	{
+		"index": 15,
+		"title": "The Three Parallels",
+		"symbol": "|||",
+		"example": ["p05_rice37"],
+		"text": ""
+	},
+	{
+		"index": 16,
+		"title": "Four cracks",
+		"symbol": "||||",
+		"example": ["p07_rice41"],
+		"text": "sth bad?"
+	}
+]
