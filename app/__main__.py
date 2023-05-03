@@ -81,6 +81,7 @@ def stream():
     else: # if anything changes
       img_raw = image
       img_out = classifier.run(img_raw)
+      sendResults()
       lastFrame = image
     cv2.imshow("out", img_out)
     if cv2.waitKey(1) & 0xFF == ord('q'):
