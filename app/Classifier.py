@@ -77,7 +77,7 @@ class Classifier:
     img_masked = getMaskedImage(img_raw, outer_contour)
     # preprocess image
     # _, img_binary = cv2.threshold(img_masked, 125, 255, cv2.THRESH_BINARY)
-    img_binary = threshold_and_mask(img_masked)
+    img_binary = threshold_and_mask(img_masked, exclude_percent=10)
   
     # debug.push_image(img_binary, "binary image")
 
@@ -104,31 +104,61 @@ class Classifier:
      # draw the longest line on the image
     if longest_line is not None:
       x1, y1, x2, y2 = longest_line[0]
-      cv2.line(img_out, (x1, y1), (x2, y2), (0, 255, 0), 10)
+      # cv2.line(img_out, (x1, y1), (x2, y2), (0, 255, 0), 10)
 
-    #if lines is not None:
-    if lines is not None:
-      lines_a = filter_lines(lines, angle_range=[angle-20, angle+20], min_distance=100)
+    lines_vert = None
+    lines_hori = None
+    
+    if lines is not None:  
+      lines = filter_lines_by_distance(lines, min_distance=300)
+      lines_vert = filter_lines_by_angle(lines, angle, tolerance=30)
+      lines_hori = filter_lines_by_angle(lines, angle-90, tolerance=30)
+    
+    # vertical lines
+    if lines_vert is not None:
+      for line in lines_vert:
+        x1, y1, x2, y2 = line[0]
+        cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 10)
+    
+    # horizontal lines
+    if lines_hori is not None:
+      for line in lines_hori:
+        x1, y1, x2, y2 = line[0]
+        cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 10)
+        # drawAxis(img_out, [x1, y1], [x2, y2], (255, 255, 0), 5)
+    
+    intersection_points = None
+    if lines_hori is not None and lines_vert is not None:
+      intersection_points = find_intersection_points(lines_vert, lines_hori)
+      if intersection_points is not None:
+        # draw intersection points as circles
+        for point in intersection_points:
+          cv2.circle(img_out, (int(point[0]), int(point[1])), 50, (125, 255, 255), 10)
+    
+    # self.layers.append({
+    #   "name": "crack_lines",
+    #   "type": "lines",
+    #   "data": json.dumps(lines_a, cls=NumpyArrayEncoder)
+    # })
+    
+    # ---------------------------------------------- #
+    # embrio
+    # ---------------------------------------------- #
+    
+    img_out, embrio_circle = fault_check(img_out, outer_contour)
+    if embrio_circle is not None:
+      (center, radius) = embrio_circle
+      cv2.circle(img_out, center, radius, (0, 0, 255), -1)
       self.layers.append({
-        "name": "crack_lines",
-        "type": "lines",
-        "data": json.dumps(lines_a, cls=NumpyArrayEncoder)
+        "name": "embrio_circle",
+        "type": "circle",
+        "data": embrio_circle
       })
-      if lines_a is not None:
-        for line in lines_a:
-          x1, y1, x2, y2 = line[0]
-          cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 10)
-    
+      
     # ---------------------------------------------- #
-    # outer faults
+    # side faults 
     # ---------------------------------------------- #
-    
-    img_out, has_fault = fault_check(img_out, outer_contour)
-    self.layers.append({
-      "name": "fault_check",
-      "type": "lines",
-      "data": has_fault
-    })
+
     # ---------------------------------------------- #
     # draw things 
     # ---------------------------------------------- #
@@ -138,7 +168,7 @@ class Classifier:
     for c in inner_contours:
       center, radius = cv2.minEnclosingCircle(c)
       circles.append([center, radius])
-      #cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (255, 0, 0), 3)
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (255, 0, 0), 3)
       #cv2.drawContours(img_out, [c], 0, (0,255,0), 2)
     # draw rice contour
     cv2.drawContours(img_out, [outer_contour], 0, (255,0,0), 2)
@@ -172,30 +202,3 @@ class Classifier:
     self.img_out = img_input.copy()
     cv2.putText(self.img_out, "test", (200,200), cv2.FONT_HERSHEY_SIMPLEX, 10, (255,0,0), 10)
     return self.img_out
-
-def filter_lines_by_angle(lines, angle, tolerance=10):
-  """
-  Filters lines based on their angle compared to a reference angle, allowing for opposite directions.
-
-  Args:
-      lines: A list of OpenCV line representations (vx, vy, x, y).
-      angle: The reference angle (in degrees).
-      tolerance: The tolerance (in degrees) for the angle difference. Default is 10.
-
-  Returns:
-      A list of lines whose angle is within the tolerance of the reference angle or its opposite.
-  """
-  filtered_lines = []
-  ref_angle_rad = np.radians(angle)
-
-  for line in lines:
-    x1, y1, x2, y2 = line[0]
-    line_angle_rad = np.arctan2(vy, vx)
-    line_angle_deg = np.degrees(line_angle_rad)
-    print("line_angle_deg", line_angle_deg)
-    angle_diff = abs(line_angle_deg - angle)
-
-    if angle_diff <= tolerance or abs(angle_diff - 180) <= tolerance:
-      filtered_lines.append(line)
-
-  return filtered_lines

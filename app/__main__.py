@@ -38,12 +38,15 @@ parser.add_argument('-t', '--test', default=False, action='store_true')
 parser.add_argument('-r', '--random', default=False, action='store_true')
 parser.add_argument('-s', '--stream', default=False, action='store_true')
 parser.add_argument('-c', '--categories', default=False, action='store_true')
+parser.add_argument('-sc', '--specific_category',  default=None, type=int)
 args = parser.parse_args()
 
 # arg variables
 debug_mode = args.debug_mode
 print("debug_mode", debug_mode)
 mode = 'random'
+
+specific_category = args.specific_category
 
 # setup classfier mode
 classifier_mode = "dataset"
@@ -73,7 +76,7 @@ def init():
     run_random_image()
   if classifier_mode == "categories":
     print("Running random")
-    run_categories_images()
+    run_categories_images(specific_category)
   if classifier_mode == "stream":
     print("Running stream")
     stream()
@@ -104,7 +107,7 @@ def run_test_image():
   # cv2.waitKey(0)
 
 def run_random_image():
-  for i in range(0, 8):
+  for i in range(0, 16):
     # load test image
     path = getRandomFile(DATASET_PATH)
     print("random image file", path)
@@ -117,16 +120,23 @@ def run_random_image():
   # debug.display()
   debug.display_images()
   
-def run_categories_images():
+def run_categories_images(specific_category = None):
+
   for c in interpreter.categories:
+    if specific_category != None and c["index"] != specific_category:
+      continue
     path = findFileInFolder(DATASET_PATH, c["example"][0])
-    # print("category",  c["example"][0], path)
-    img_raw = cv2.imread(path, 0)
-    img_out = classifier.run(img_raw)
-    text = str(c["index"]) + " " + c["title"] + " " + c["symbol"]
-    debug.push_image(img_out, text)
+    for name in c["example"]:
+      path = findFileInFolder(DATASET_PATH, name)
+      print("name", name, path)
+      if path == None:
+        break
+      img_raw = cv2.imread(path, 0)
+      img_out = classifier.run(img_raw)
+      text = c["example"][0] + " " + str(c["index"]) + " " + c["title"] + " " + c["symbol"]
+      debug.push_image(img_out, text)
   sendResults()
-  debug.display_images()
+  debug.display()
     
 
 def analyzeResults():

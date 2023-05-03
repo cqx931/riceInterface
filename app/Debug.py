@@ -48,11 +48,11 @@ class Debug:
         i += 1
     plt.show()
 
-  def display_images(self):
+  def display_images(self, columns=4):
     
    #  square_size = int(math.ceil(math.sqrt(len(self.images)))) + 1
     
-    stacked_images = self.stack_images(0.5, self.images, columns=4)
+    stacked_images = self.stack_images(0.5, self.images, columns=columns)
     cv2.imshow("Display Images", stacked_images)
     
     # Wait for a key press to close the window
@@ -70,7 +70,7 @@ class Debug:
       img = cv2.resize(img, (int(max_w * scale), int(max_h * scale)))
       if len(img.shape) == 2:
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-      cv2.putText(img, self.titles[i], (int(img.shape[1] * 10 / 100), int(img.shape[0] * 10 / 100)), cv2.FONT_HERSHEY_SIMPLEX, 3, (120, 222, 0), 5)
+      cv2.putText(img, self.titles[i], (int(img.shape[1] * 10 / 100), int(img.shape[0] * 10 / 100)), cv2.FONT_HERSHEY_SIMPLEX, 2, (120, 222, 0), 5)
       formatted_arr.append(img)
 
     if len(img_array) % columns != 0:
