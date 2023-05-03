@@ -8,6 +8,7 @@ from utils import *
 # from socket_connection import connectSocket
 from Classifier import Classifier
 import cv2
+# import json
 from Debug import debug
 from socket_connection import SocketClient
 from Interpreter import Interpreter
@@ -36,6 +37,7 @@ parser.add_argument('-d', '--debug_mode', default=True, action='store_true')
 parser.add_argument('-t', '--test', default=False, action='store_true')
 parser.add_argument('-r', '--random', default=False, action='store_true')
 parser.add_argument('-s', '--stream', default=False, action='store_true')
+parser.add_argument('-c', '--categories', default=False, action='store_true')
 args = parser.parse_args()
 
 # arg variables
@@ -51,8 +53,12 @@ if args.random:
   classifier_mode = "random"
 if args.stream:
   classifier_mode = "stream"
+if args.categories:
+  classifier_mode = "categories"
 
 debug_images = {}
+
+
 
 classifier = Classifier(classifier_mode)
 interpreter = Interpreter()
@@ -65,6 +71,9 @@ def init():
   if classifier_mode == "random":
     print("Running random")
     run_random_image()
+  if classifier_mode == "categories":
+    print("Running random")
+    run_categories_images()
   if classifier_mode == "stream":
     print("Running stream")
     stream()
@@ -95,7 +104,7 @@ def run_test_image():
   # cv2.waitKey(0)
 
 def run_random_image():
-  for i in range(0, 4):
+  for i in range(0, 8):
     # load test image
     path = getRandomFile(DATASET_PATH)
     print("random image file", path)
@@ -104,10 +113,22 @@ def run_random_image():
     # debug.push_image(img_raw, "raw")
     debug.push_image(img_out, "out")
   sendResults()
-  analyzeResults()
+  # analyzeResults()
   # debug.display()
   debug.display_images()
   
+def run_categories_images():
+  for c in interpreter.categories:
+    path = findFileInFolder(DATASET_PATH, c["example"][0])
+    # print("category",  c["example"][0], path)
+    img_raw = cv2.imread(path, 0)
+    img_out = classifier.run(img_raw)
+    text = str(c["index"]) + " " + c["title"] + " " + c["symbol"]
+    debug.push_image(img_out, text)
+  sendResults()
+  debug.display_images()
+    
+
 def analyzeResults():
   results = interpreter.analyse(classifier.get_layers())
   

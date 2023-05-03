@@ -79,7 +79,7 @@ class Classifier:
     # _, img_binary = cv2.threshold(img_masked, 125, 255, cv2.THRESH_BINARY)
     img_binary = threshold_and_mask(img_masked)
   
-    debug.push_image(img_binary, "binary image")
+    # debug.push_image(img_binary, "binary image")
 
     # img_out = img_masked.copy()
     if (len(img_out.shape) == 1):
