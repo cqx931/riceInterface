@@ -151,6 +151,8 @@ def run_all_dataset():
   for i, f in enumerate(files):
     img_raw = cv2.imread(f, 0)
     img_out = classifier.run(img_raw)
+    results = interpreter.analyse()
+    cv2.putText(img_out, results, (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (120, 222, 0), 5)
     filename = os.path.split(f)[1].split('.')[0] + "_opencv.jpg"
     print("filename", filename)
     # save image
@@ -162,20 +164,12 @@ def analyzeResults():
   results = interpreter.analyse(classifier.get_layers())
   
 def sendResults():
-  # TO DO, fix numpy array to json
-  # results = classifier.get_results()
   results = interpreter.analyse()
   print("results", results)
   layers = classifier.get_json_layers()
   classifier.clear_layers()
   socketio_client.sendMessage('layers', layers)
-  # sendSocketMessage('results', results)
-
-  # print("layers", layers)
-  # send results to server
-  # print("sending results to server")
-  # print(classifier.get_results())
-  # connectSocket(server_url, classifier.get_results())
+  
   pass  
 
 

@@ -14,7 +14,7 @@ class Interpreter:
     num_intersections = len(self.classifier.get_layer_data("intersections"))
     embrios = len(self.classifier.get_layer_data("embrio_circle"))
     num_islands= len(self.classifier.get_layer_data("non_intersecting_islands"))
-    s = '_'*num_horizontal_lines + '|' + '_'*num_vertical_lines + '|' + '+'*num_intersections + 'º'*embrios + '*'*num_islands
+    s = '_'*num_horizontal_lines + '|' + '_'*num_vertical_lines + '|' + '+'*num_intersections + 'o'*embrios + '*'*num_islands
     # scramble string
     s = ''.join(random.sample(s,len(s)))
     return s
