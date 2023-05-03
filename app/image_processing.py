@@ -261,7 +261,7 @@ def filter_lines_by_angle(lines, ref_angle, tolerance=50):
         x1, y1, x2, y2 = line[0]
         is_valid = True
         angle = np.rad2deg(get_angle([x1, y1], [x2, y2]))
-        print("angles: ", angle, ref_angle)
+        #print("angles: ", angle, ref_angle)
         angle_diff = abs(angle - ref_angle)
         if angle_diff <= tolerance or abs(angle_diff - 180) <= tolerance:
             filtered_lines.append(line)
@@ -338,7 +338,7 @@ def getOrientation(pts, img):
     return angle
 
 
-def fault_check(img, outer_contour):
+def embrio_check(img, outer_contour):
     DIFF_AREA_THRESHOLD = 200000
 
     output = img.copy()
@@ -352,7 +352,7 @@ def fault_check(img, outer_contour):
     # draw the approximated contour on the image
 
     hull = cv2.convexHull(outer_contour)
-    cv2.drawContours(output, [hull], 0, (0, 255, 0), 10)
+    #cv2.drawContours(output, [hull], 0, (0, 255, 0), 10)
 
     (centerCoordinates, axesLength, angle) = cv2.fitEllipse(hull)
     axesLength = tuple([0.95*x for x in axesLength])
@@ -360,34 +360,55 @@ def fault_check(img, outer_contour):
 
     # new_radius =  tuple([0.9*x for x in minEllipse[1]])
     minEllipse = (centerCoordinates, axesLength, angle)
-
-    # cv2.ellipse(output, minEllipse, (255, 0, 0), 3)
-
-    rice_area = cv2.contourArea(outer_contour)
-
-    # Create a blank mask image
+    
+    # Create a blank mask image and draw the contours
     mask = np.zeros(img.shape[:2], dtype=np.uint8)
     cv2.drawContours(mask, [outer_contour], 0, (255, 255, 255), -1)
+
+    # diff between hull area and rice area
+    rice_area = cv2.contourArea(outer_contour)
+    hull_area = cv2.contourArea(hull)
+    area_diff = (hull_area - rice_area)/rice_area
+    # print("area_diff", area_diff)
+    # cv2.putText(output, str(area_diff), (50, 500), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 3)
+    circle_faults = []
+    if area_diff > 0.05:
+      # get contours from neg mask.
+      print(" ")
+      # Create a blank image for the ellipse mask
+      hull_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+      cv2.drawContours(hull_mask, [hull], 0, (255, 255, 255), -1)
+      # Invert the ellipse mask & Get the intersection between the contour mask and the inverted ellipse mask
+      inverted_hull_mask = cv2.bitwise_not(hull_mask)
+      faults_mask = cv2.bitwise_not(cv2.bitwise_or(mask, inverted_hull_mask))
+      cv2.imshow('window', faults_mask)
+      faults_contours, _ = cv2.findContours(faults_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+      for fault_contour in faults_contours:
+        fault_area = cv2.contourArea(fault_contour)
+        centerPoint, radius = cv2.minEnclosingCircle(fault_contour)
+        radius = int(cv2.pointPolygonTest(fault_contour, centerPoint, True))
+        if radius > 0:
+          circle_faults.append((centerPoint, radius))
+    
     # Create a blank image for the ellipse mask
     ellipse_mask = np.zeros(img.shape[:2], dtype=np.uint8)
     cv2.ellipse(ellipse_mask, minEllipse, (255, 255, 255), -1)
-
-    # Invert the ellipse mask
+    
+    # Invert the ellipse mask & Get the intersection between the contour mask and the inverted ellipse mask
     inverted_ellipse_mask = cv2.bitwise_not(ellipse_mask)
-
-    # Get the intersection between the contour mask and the inverted ellipse mask
-    final_mask = cv2.bitwise_not(cv2.bitwise_or(mask, inverted_ellipse_mask))
-
-    contours, _ = cv2.findContours(final_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    max_contour = max(contours, key=cv2.contourArea)
+    embrio_mask = cv2.bitwise_not(cv2.bitwise_or(mask, inverted_ellipse_mask))
+    embrio_contours, _ = cv2.findContours(embrio_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    embrio_contour = max(embrio_contours, key=cv2.contourArea)
 
     embrio_circle = None
-    centerPoint = getContourCenterPoint(max_contour)
-    radius = int(cv2.pointPolygonTest(max_contour, centerPoint, True))
-    if radius > 0:
+    centerPoint = getContourCenterPoint(embrio_contour)
+    radius = abs(int(cv2.pointPolygonTest(embrio_contour, centerPoint, True)))
+    # print("embrio radius", radius)
+    if radius > 10 and radius < 100:
       embrio_circle = (centerPoint, radius)
     
-    return output, embrio_circle
+    return output, embrio_circle, circle_faults
 
 
 def find_largest_circle(mask):

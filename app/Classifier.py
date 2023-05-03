@@ -46,7 +46,6 @@ class Classifier:
       img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
     
     img_out = equalize_image(img_out)
-    # debug.push_image(img_out, "equalized image")
     
     # ---------------------------------------------- #
     # outer contour
@@ -118,12 +117,14 @@ class Classifier:
     if lines_vert is not None:
       for line in lines_vert:
         x1, y1, x2, y2 = line[0]
+        drawAxis(img_out, (x1, y1), (x2, y2), (255, 255, 0), 5)
         cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 10)
     
     # horizontal lines
     if lines_hori is not None:
       for line in lines_hori:
         x1, y1, x2, y2 = line[0]
+        drawAxis(img_out, (x1, y1), (x2, y2), (255, 255, 0), 5)
         cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 10)
         # drawAxis(img_out, [x1, y1], [x2, y2], (255, 255, 0), 5)
     
@@ -142,22 +143,30 @@ class Classifier:
     # })
     
     # ---------------------------------------------- #
-    # embrio
+    # embrio & faults
     # ---------------------------------------------- #
     
-    img_out, embrio_circle = fault_check(img_out, outer_contour)
+    img_out, embrio_circle, circle_faults = embrio_check(img_out, outer_contour)
     if embrio_circle is not None:
       (center, radius) = embrio_circle
       cv2.circle(img_out, center, radius, (0, 0, 255), -1)
+      
       self.layers.append({
         "name": "embrio_circle",
         "type": "circle",
         "data": embrio_circle
       })
+    
+    # if circle_faults is not None:
+    #   for (center, radius) in circle_faults:
+    #     cv2.circle(img_out, (int(center[0]),int(center[1])), radius, (255, 0, 0), -1)
+    #   self.layers.append({
+    #     "name": "circle_faults",
+    #     "type": "circles",
+    #     "data": circle_faults
+    #   })
       
-    # ---------------------------------------------- #
-    # side faults 
-    # ---------------------------------------------- #
+
 
     # ---------------------------------------------- #
     # draw things 

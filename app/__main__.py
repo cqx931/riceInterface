@@ -128,15 +128,15 @@ def run_categories_images(specific_category = None):
     path = findFileInFolder(DATASET_PATH, c["example"][0])
     for name in c["example"]:
       path = findFileInFolder(DATASET_PATH, name)
-      print("name", name, path)
+      # print("name", name, path)
       if path == None:
         break
-      img_raw = cv2.imread(path, 0)
-      img_out = classifier.run(img_raw)
-      text = c["example"][0] + " " + str(c["index"]) + " " + c["title"] + " " + c["symbol"]
-      debug.push_image(img_out, text)
+    img_raw = cv2.imread(path, 0)
+    img_out = classifier.run(img_raw)
+    text = c["example"][0] + " " + str(c["index"]) + " " + c["title"] + " " + c["symbol"]
+    debug.push_image(img_out, text)
   sendResults()
-  debug.display()
+  debug.display_images()
     
 
 def analyzeResults():
