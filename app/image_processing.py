@@ -292,8 +292,6 @@ def fault_check(img, outer_contour):
   approx = cv2.approxPolyDP(outer_contour, eps * peri, True)
   # draw the approximated contour on the image
 
-  cv2.drawContours(output, [outer_contour], -1, (0, 255, 0), 10)
-  cv2.drawContours(output, [approx], -1, (255, 0, 0), 10)
 
   hull = cv2.convexHull(outer_contour)
   cv2.drawContours(output, [hull], 0, (0, 255, 0), 10)
@@ -307,4 +305,4 @@ def fault_check(img, outer_contour):
   print("diff area", rice_area, diff_area, diff_area / rice_area)
   has_fault = diff_area > DIFF_AREA_THRESHOLD
   
-  return output, has_fault 
+  return output, has_fault

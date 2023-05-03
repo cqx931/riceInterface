@@ -31,7 +31,11 @@ class Classifier:
     return self.results
 
   def get_layers(self):
-    return self.layers
+    output = []
+    for layer in self.layers:   
+      layer["data"] = json.dumps(layer["data"], cls=NumpyArrayEncoder)
+      output.append(layer)
+    return output
   
   # process image
   def process(self, img_raw):

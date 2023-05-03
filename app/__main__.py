@@ -10,6 +10,7 @@ from Classifier import Classifier
 import cv2
 from Debug import debug
 from socket_connection import SocketClient
+from Interpreter import Interpreter
 # standard Python
 
 socketio_client = SocketClient()
@@ -54,6 +55,7 @@ if args.stream:
 debug_images = {}
 
 classifier = Classifier(classifier_mode)
+interpreter = Interpreter()
 
 def init(): 
   # start opencv
@@ -102,7 +104,12 @@ def run_random_image():
     # debug.push_image(img_raw, "raw")
     debug.push_image(img_out, "out")
   sendResults()
-  debug.display()
+  analyzeResults()
+  # debug.display()
+  debug.display_images()
+  
+def analyzeResults():
+  results = interpreter.analyse(classifier.get_layers())
   
 def sendResults():
   # TO DO, fix numpy array to json
