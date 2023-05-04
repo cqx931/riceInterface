@@ -92,7 +92,7 @@ class Classifier:
       self.clear_vars()
       self.clear_layers()
       return False
-    self.outer_contour = outer_contour
+    #self.outer_contour = [outer_contour]
     self.add_layer("outer_contour", "contour", [outer_contour]) #(#)#
     self.outer_contour = [outer_contour]
     #print("rice_area", rice_area)
@@ -209,28 +209,32 @@ class Classifier:
     return True
 
   def draw_elements(self, img_out):
-
+    
     for outer_contour in self.outer_contour:
-      cv2.drawContours(img_out, outer_contour, 0, (255,0,0), 2)
+      cv2.drawContours(img_out, [outer_contour], 0, (255,0,0), 2)
     
     for line in self.lines_hori:
       x1, y1, x2, y2 = line[0]
-      cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 2)
+      cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 1)
     
     for line in self.lines_vert:
       x1, y1, x2, y2 = line[0]
-      cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 2)
+      cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 1)
   
     for point in self.intersection_points:
       cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 255, 255), 1)
         
     for circle in self.intersecting_circles:
       center, radius = circle
-      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 3)
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 0, 255), 1)
     
     for circle in self.non_intersecting_circles:
       center, radius = circle
-      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 3)
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 1)
+
+    for circle in self.embrio_circle:
+      center, radius = circle
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (255, 0, 0), 1)
 
     # print("draw elements")
     # for layer in self.layers:
@@ -263,7 +267,6 @@ class Classifier:
 
 
   def add_layer(self, name, _type, data):
-    print("add_layer", name, len(self.layers))
     self.layers.append({
       "name": name,
       "type": _type,

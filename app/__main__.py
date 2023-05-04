@@ -114,6 +114,8 @@ def stream():
         start_time = time.time()
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate     
         found = classifier.process(image)
+        if found:
+          sendLayers()
         has_rice = found
       
       # first check if the frames are diff enough, only compute when its stable
