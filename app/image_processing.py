@@ -405,7 +405,9 @@ def embrio_check(img, outer_contour):
     inverted_ellipse_mask = cv2.bitwise_not(ellipse_mask)
     embrio_mask = cv2.bitwise_not(cv2.bitwise_or(mask, inverted_ellipse_mask))
     embrio_contours, _ = cv2.findContours(embrio_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+    if len(embrio_contours) < 1:
+      return None, None, None
+
     embrio_contour = max(embrio_contours, key=cv2.contourArea)
 
     embrio_circle = None

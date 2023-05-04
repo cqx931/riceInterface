@@ -41,14 +41,17 @@ class Classifier:
 
   def get_json_layers(self):
     output = []
-    for layer in self.layers:   
+    _layers = self.layers.copy()
+    for layer in _layers:   
       layer["data"] = json.dumps(layer["data"], cls=NumpyArrayEncoder)
       output.append(layer)
     return output
   
   def get_layer_data(self, name):
-    for layer in self.layers:
+    _layers = self.layers.copy()
+    for layer in _layers:
       if layer["name"] == name:
+        print("get_layer_data", name, layer["data"])
         return layer["data"]
     return []
   
@@ -71,11 +74,13 @@ class Classifier:
     outer_contour = findMaxContour(img_otsu)
     if outer_contour is None: # if there is no outer contour, no sense doing anything else
       self.clear_vars()
+      self.clear_layers()
       return False
     rect = cv2.minAreaRect(outer_contour)
     rice_area = cv2.contourArea(outer_contour)
     if rice_area < MIN_RICE_AREA:
       self.clear_vars()
+      self.clear_layers()
       return False
     self.outer_contour = outer_contour
     self.add_layer("outer_contour", "contour", [outer_contour]) #(#)#
@@ -248,6 +253,7 @@ class Classifier:
 
 
   def add_layer(self, name, _type, data):
+    print("add_layer", name, len(self.layers))
     self.layers.append({
       "name": name,
       "type": _type,
@@ -262,7 +268,8 @@ class Classifier:
     return self.img_out
 
   def clear_layers(self):
-    self.layers = []
+    self.layers.clear()
+    print("clear_layers", len(self.layers))
 
   def clear_vars(self):
     self.outer_contour = []
