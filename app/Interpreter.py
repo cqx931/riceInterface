@@ -29,6 +29,12 @@ class Interpreter:
     else:
       num_intersections = len(self.classifier.get_layer_data("intersections"))
     
+    # horizontal intersections
+    if type(self.classifier.get_layer_data("horizontal_intersection_points")) == str:
+      num_horizontal_intersections = len(ast.literal_eval(self.classifier.get_layer_data("horizontal_intersection_points")))
+    else:
+      num_horizontal_intersections = len(self.classifier.get_layer_data("horizontal_intersection_points"))
+    
     # embrio_circle
     if type(self.classifier.get_layer_data("embrio_circle")) == str:
       embrios = len(ast.literal_eval(self.classifier.get_layer_data("embrio_circle")))
@@ -47,7 +53,7 @@ class Interpreter:
     else:
       num_islands_cross= len(self.classifier.get_layer_data("intersecting_islands"))
 
-    s = '_'*num_horizontal_lines + '|'*num_vertical_lines + '+'*num_intersections + 'º'*embrios + '*'*num_islands + 'ø'*num_islands_cross
+    s = '_'*num_horizontal_lines + '|'*num_vertical_lines + '+'*num_intersections + 'x'*num_horizontal_intersections + 'º'*embrios + '*'*num_islands
     # scramble string
     #s = ''.join(random.sample(s,len(s)))
     return s

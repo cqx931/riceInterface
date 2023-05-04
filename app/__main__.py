@@ -154,7 +154,7 @@ def run_random_image():
   for i in range(0, 16):
     # load test image
     path = getRandomFile(DATASET_PATH)
-    print("random image file", path)
+    # print("random image file", path)
     img_raw = cv2.imread(path, 0)
     img_out = classifier.run(img_raw)
     # debug.push_image(img_raw, "raw")
@@ -190,7 +190,7 @@ def run_all_dataset():
     img_raw = cv2.imread(f, 0)
     img_out = classifier.run(img_raw)
     filename = os.path.split(f)[1].split('.')[0] + "_opencv.jpg"
-    print("filename", filename)
+    # print("filename", filename)
     # save image
     if args.save_file:
       cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
@@ -203,7 +203,7 @@ def sendResults():
   # TO DO, fix numpy array to json
   # results = classifier.get_results()
   results = interpreter.analyse()
-  print("send results", results)
+  # print("send results", results)
   if len(results) > 0:
     #print("send results", results)
     socketio_client.sendMessage('results', results)
@@ -215,7 +215,7 @@ def sendResults():
 def sendLayers():
   layers = classifier.get_json_layers()
   socketio_client.sendMessage('layers', layers)
-  print("send layers", len(layers))
+  # print("send layers", len(layers))
   # classifier.clear_layers()
 
 
