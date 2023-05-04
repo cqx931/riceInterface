@@ -31,12 +31,13 @@ TEST_IMAGE_PATH = os.environ.get("TEST_IMAGE_PATH")
 DATASET_EXPORT_PATH = "dataset_export/"
 RASPBERRY_PI = "192.168.1.22"
 STREAM_SNAPSHOT = "http://" + RASPBERRY_PI + ":8080/?action=snapshot"
+
+INTERVAL_SECONDS = 2
+
 # full server url for connection to the socket
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
 
 conter = 0
-
-current_state = 'idle'
 
 # default values
 # foo = 0
@@ -130,7 +131,7 @@ def stream():
       lastFrame = image
       img_out = classifier.draw_elements(image)
     # print(has_rice, sent_results , time.time() - start_time)
-    if has_rice and sent_results == False and time.time() - start_time > 2:
+    if has_rice and sent_results == False and time.time() - start_time > INTERVAL_SECONDS:
       sent_results = sendResults()
 
     cv2.imshow("out", img_out)
