@@ -13,6 +13,10 @@ from Debug import debug
 from socket_connection import SocketClient
 from Interpreter import Interpreter
 # standard Python
+from image_processing import image_diff
+
+
+IMAGE_DIFF_THRESHOLD = 0.01
 
 socketio_client = SocketClient()
 socketio_client.connect("http://localhost:3000")
@@ -29,6 +33,8 @@ RASPBERRY_PI = "192.168.1.22"
 STREAM_SNAPSHOT = "http://" + RASPBERRY_PI + ":8080/?action=snapshot"
 # full server url for connection to the socket
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
+
+current_state = 'idle'
 
 # default values
 # foo = 0
@@ -95,10 +101,19 @@ def stream():
     if np.array_equal(image, lastFrame) :
       img_out = image
     else: # if anything changes
-      img_raw = image
-      img_out = classifier.run(img_raw)
-      sendResults()
+      # avoid first frame exception
+      found = False
+      if lastFrame is None:
+        lastFrame = image
+        found = classifier.process(image)
+      # first check if the frames are diff enough, only compute when its stable
+      if image_diff(lastFrame, image) > IMAGE_DIFF_THRESHOLD:
+        found = classifier.process(image)
+        if found:
+          sendResults()
       lastFrame = image
+      classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate     
+      img_out = classifier.draw_elements(image)
     cv2.imshow("out", img_out)
     if cv2.waitKey(1) & 0xFF == ord('q'):
       break
@@ -168,8 +183,8 @@ def sendResults():
   results = interpreter.analyse()
   print("results", results)
   layers = classifier.get_json_layers()
-  classifier.clear_layers()
   socketio_client.sendMessage('layers', layers)
+  classifier.clear_layers()
   # sendSocketMessage('results', results)
 
   # print("layers", layers)

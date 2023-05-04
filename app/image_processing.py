@@ -6,7 +6,7 @@ from math import atan2, cos, sin, sqrt, pi
 
 # import dip.image as im
 
-ISLAND_SIZE_TRESHOLD = 2000
+ISLAND_SIZE_TRESHOLD = 1000
 
 # otsu thresholding
 
@@ -27,6 +27,8 @@ def findMaxContour(img_otsu):
     # Find all the contours in the thresholded image
     contours, _ = cv2.findContours(
         img_otsu, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+    if len(contours) < 10:
+      return None
     max_contour = max(contours, key=cv2.contourArea)
     return max_contour
 
@@ -357,6 +359,9 @@ def embrio_check(img, outer_contour):
     # draw the approximated contour on the image
 
     hull = cv2.convexHull(outer_contour)
+    if len(hull) < 10:
+      return None, None, None
+
     #cv2.drawContours(output, [hull], 0, (0, 255, 0), 10)
     
     (centerCoordinates, axesLength, angle) = cv2.fitEllipse(hull)
@@ -374,12 +379,10 @@ def embrio_check(img, outer_contour):
     rice_area = cv2.contourArea(outer_contour)
     hull_area = cv2.contourArea(hull)
     area_diff = (hull_area - rice_area)/rice_area
-    # print("area_diff", area_diff)
     # cv2.putText(output, str(area_diff), (50, 500), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 3)
     circle_faults = []
     if area_diff > 0.05:
       # get contours from neg mask.
-      print(" ")
       # Create a blank image for the ellipse mask
       hull_mask = np.zeros(img.shape[:2], dtype=np.uint8)
       cv2.drawContours(hull_mask, [hull], 0, (255, 255, 255), -1)
@@ -406,6 +409,8 @@ def embrio_check(img, outer_contour):
     embrio_contour = max(embrio_contours, key=cv2.contourArea)
 
     embrio_circle = None
+    if len(embrio_contour) < 10:
+      return None, None, circle_faults
     centerPoint = getContourCenterPoint(embrio_contour)
     radius = abs(int(cv2.pointPolygonTest(embrio_contour, centerPoint, True)))
     # print("embrio radius", radius)
@@ -506,3 +511,9 @@ def line_circle_intersection(line, circle):
             return True
         else:
             return False
+
+def image_diff(img1, img2):
+  diff = cv2.absdiff(img1, img2)
+  diff_norm = cv2.normalize(diff, None, 0, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+  diff_mean = cv2.mean(diff_norm)[0]
+  return diff_mean
