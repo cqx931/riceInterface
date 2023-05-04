@@ -61,7 +61,6 @@ class Classifier:
     _layers = self.layers.copy()
     for layer in _layers:
       if layer["name"] == name:
-        print("get_layer_data", name, layer["data"])
         return layer["data"]
     return []
   
@@ -263,7 +262,6 @@ class Classifier:
 
 
   def add_layer(self, name, _type, data):
-    print("add_layer", name, len(self.layers))
     self.layers.append({
       "name": name,
       "type": _type,

@@ -12,5 +12,5 @@ __pycache__/
 
 *.DS_Store
 *.zip
-
+results.txt
 layers.json
