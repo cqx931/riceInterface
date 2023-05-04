@@ -5,12 +5,12 @@ dataset/
 rice_data/
 dataset_export/
 
-
+layers.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 
 *.DS_Store
 *.zip
-
+results.txt
 layers.json

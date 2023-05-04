@@ -62,7 +62,6 @@ class Classifier:
     _layers = self.layers.copy()
     for layer in _layers:
       if layer["name"] == name:
-        print("get_layer_data", name, layer["data"])
         return layer["data"]
     return []
   

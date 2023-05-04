@@ -6,13 +6,13 @@
 - No. & Position Info of **Faults**("<")
 
 ### Interpreter Values
-- **num horizontal lines** ("_")
-- **vertical lines** ("|") 
-- **line intersections** ("+") 
-- **lonely islands** ("*")
-
+- **num horizontal lines** ("\_")
+- **vertical lines** ("\|") 
+- **line intersections** ("\+") 
+- **lonely islands** ("\*")
 
 no text influence
+
 - **fault** ("º")
 - **intersected islands** ("ø")
 
