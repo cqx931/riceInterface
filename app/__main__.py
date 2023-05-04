@@ -57,7 +57,6 @@ args = parser.parse_args()
 # arg variables
 debug_mode = args.debug_mode
 print("debug_mode", debug_mode)
-mode = 'random'
 
 specific_category = args.specific_category
 
@@ -78,19 +77,19 @@ stream_on = True
 
 def init(): 
   # start opencv
-  if args.test:
+  if args.test == True:
     print("Running test")
     run_test_image()
-  elif args.random:
-    print("Running random")
+  elif args.random == True:
+    print("Running random", args.random)
     run_random_image()
-  elif args.categories:
-    print("Running random")
+  elif args.categories == True:
+    print("Running categories")
     run_categories_images(specific_category)
-  elif args.stream:
+  elif args.stream == True:
     print("Running stream")
     stream()
-  elif args.all_dataset:
+  elif args.all_dataset == True:
     print("Running stream")
     run_all_dataset()
   
@@ -187,6 +186,21 @@ def run_categories_images(specific_category = None):
   
 def run_all_dataset():
   files = getAllImages(DATASET_PATH)
+<<<<<<< HEAD
+  with open('results.txt', 'a') as fd:
+    for i, f in enumerate(files):
+      img_raw = readImage(f)
+      img_out = classifier.run(img_raw)
+      results = interpreter.analyse()
+      cv2.putText(img_out, results, (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (120, 222, 0), 5)
+      filename = os.path.split(f)[1].split('.')[0] + "_opencv.jpg"
+      print("filename", filename + " " + results)
+      fd.write(f'\n{filename + "    " + results}')
+      classifier.clear_layers()
+      # save image
+      if args.save_file:
+        cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
+=======
   for i, f in enumerate(files):
     img_raw = cv2.imread(f, 0)
     img_out = classifier.run(img_raw)
@@ -195,14 +209,13 @@ def run_all_dataset():
     # save image
     if args.save_file:
       cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
+>>>>>>> 8039f6895ac7352fe78987f099b05dd8fb7c6414
   
   
 def analyzeResults():
   results = interpreter.analyse(classifier.get_layers())
   
 def sendResults():
-  # TO DO, fix numpy array to json
-  # results = classifier.get_results()
   results = interpreter.analyse()
   # print("send results", results)
   if len(results) > 0:

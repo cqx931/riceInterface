@@ -2,6 +2,9 @@ import glob
 import random
 from json import JSONEncoder
 import numpy as np
+import cv2
+
+RESOLUTION=1080
 
 def getRandomFile(path):
   # Get List of all images
@@ -12,6 +15,12 @@ def getAllImages(path):
   # Get List of all images
   files = glob.glob(path + '/**/*.jpg', recursive=True)
   return files
+
+def readImage(path):
+  img = cv2.imread(path, 0)
+  # resize image
+  img = cv2.resize(img, (RESOLUTION, RESOLUTION))
+  return img
 
 def findFileInFolder(path, name):
   files = glob.glob(path + '/**/'+name+'.*', recursive=True)
