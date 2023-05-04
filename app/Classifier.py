@@ -5,12 +5,34 @@ from image_processing import *
 import json
 from utils import *
 
+MIN_RICE_AREA = 50000
+# vertical lines paramenters
+VERTICAL_THRESHOLD=50
+VERTICAL_MIN_LINE_LENGTH=200
+VERTICAL_MAX_LINE_GAP=50
+VERTICAL_MIN_DISTANCE=100
+# horizontal line parameters
+HORIZONTAL_THRESHOLD=50
+HORIZONTAL_MIN_LINE_LENGTH=80
+HORIZONTAL_MAX_LINE_GAP=800
+HORIZONTAL_MIN_DISTANCE=50
+
 class Classifier:
 
   # interpreter = Interpreter()
   results = {}
   order = []
   layers = []
+
+  outer_contour = []
+  island_circles = []
+  inner_contours = []
+  lines_hori = []
+  lines_vert = []
+  intersecting_circles = []
+  non_intersecting_circles = []
+  embrio_circle = []
+  intersection_points = []
 
   def __init__(self, mode):
     #self.model = mode
@@ -29,14 +51,17 @@ class Classifier:
 
   def get_json_layers(self):
     output = []
-    for layer in self.layers:   
+    _layers = self.layers.copy()
+    for layer in _layers:   
       layer["data"] = json.dumps(layer["data"], cls=NumpyArrayEncoder)
       output.append(layer)
     return output
   
   def get_layer_data(self, name):
-    for layer in self.layers:
+    _layers = self.layers.copy()
+    for layer in _layers:
       if layer["name"] == name:
+        print("get_layer_data", name, layer["data"])
         return layer["data"]
     return []
   
@@ -44,7 +69,6 @@ class Classifier:
   def process(self, img_raw):
     
     img_out = img_raw.copy()
-    print(len(img_out.shape))
     if (len(img_out.shape) == 1):
       img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
     img_out = equalize_image(img_out)
@@ -52,38 +76,54 @@ class Classifier:
     # ---------------------------------------------- #
     # outer contour
     # ---------------------------------------------- #
-    
+    self.outer_contour = []
     # brighter image for outer contour detection 
     img_lighter = img_out.copy() # equalizeLight(img_out, 20) # todo implement
     img_otsu = otsu_thresholding(img_raw)
     # debug.push_image(img_otsu, "otsu")
     outer_contour = findMaxContour(img_otsu)
+    if outer_contour is None: # if there is no outer contour, no sense doing anything else
+      self.clear_vars()
+      self.clear_layers()
+      return False
     rect = cv2.minAreaRect(outer_contour)
-    self.add_layer("outer_contour", "contours", outer_contour)
-    
+    rice_area = cv2.contourArea(outer_contour)
+    if rice_area < MIN_RICE_AREA:
+      self.clear_vars()
+      self.clear_layers()
+      return False
+    self.outer_contour = outer_contour
+    self.add_layer("outer_contour", "contour", [outer_contour]) #(#)#
+    self.outer_contour = [outer_contour]
+    #print("rice_area", rice_area)
+
     # ---------------------------------------------- #
     # inner islands
     # ---------------------------------------------- #
     
     # preprocess image
     img_masked = getMaskedImage(img_raw, outer_contour)
-    img_binary = threshold_and_mask(img_masked, exclude_percent=9)  
+    img_binary = threshold_and_mask(img_masked, exclude_percent=10)  
     img_binary_islands = threshold_and_mask(equalize_image(img_masked), exclude_percent=6)
   
     if (len(img_out.shape) == 1):
       img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
 
     inner_contours = getInnerIslands(img_binary_islands, outer_contour)
-    self.add_layer("island_contours", "contours", inner_contours)
+    #if drawContours is not None:
+      # self.add_layer("island_contours", "contours", inner_contours)
     
     # draw island detections
+    self.island_circles = [] 
     island_circles = []
     for c in inner_contours:
       center, radius = cv2.minEnclosingCircle(c)
       island_circles.append([center, radius])
       #cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (255, 0, 0), 3)
         #cv2.drawContours(img_out, [c], 0, (0,255,0), 2)
-    self.add_layer("island_circles", "circle", island_circles)
+    if len(island_circles) > 0:
+      self.add_layer("island_circles", "circles", island_circles)
+      self.island_circles = island_circles
     
     # ---------------------------------------------- #
     # crack lines
@@ -92,40 +132,46 @@ class Classifier:
     angle = np.rad2deg(getOrientation(outer_contour, img_out)) 
 
     # vertical line
-    lines_vert = detect_trace(img_binary, threshold=50, minLineLength=800, maxLineGap=100)
+    self.lines_vert = []
+    lines_vert = detect_trace(img_binary, threshold=VERTICAL_THRESHOLD, minLineLength=VERTICAL_MIN_LINE_LENGTH, maxLineGap=VERTICAL_MAX_LINE_GAP)
     if lines_vert is not None:
-      lines_vert = filter_lines_by_distance(lines_vert, min_distance=200)
+      lines_vert = filter_lines_by_distance(lines_vert, min_distance=VERTICAL_MIN_DISTANCE)
       lines_vert = filter_lines_by_angle(lines_vert, angle, tolerance=20)
       self.add_layer("lines_vertical", "lines", lines_vert)
+      self.lines_vert = lines_vert 
       for line in lines_vert:
         x1, y1, x2, y2 = line[0]
-        drawAxis(img_out, (x1, y1), (x2, y2), (255, 255, 0), 5)
-        cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 10)
+        # drawAxis(img_out, (x1, y1), (x2, y2), (255, 255, 0), 5)
+        cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 2)
     
     # horizontal line
-    lines_hori = detect_trace(img_binary, threshold=80, minLineLength=500, maxLineGap=800)
+    self.lines_hori = []
+    lines_hori = detect_trace(img_binary, threshold=HORIZONTAL_THRESHOLD, minLineLength=HORIZONTAL_MIN_LINE_LENGTH, maxLineGap=HORIZONTAL_MAX_LINE_GAP)
     if lines_hori is not None:
-      lines_hori = filter_lines_by_distance(lines_hori, min_distance=300)
+      lines_hori = filter_lines_by_distance(lines_hori, min_distance=HORIZONTAL_MIN_DISTANCE)
       lines_hori = filter_lines_by_angle(lines_hori, angle-90, tolerance=30)
       self.add_layer("lines_horizontal", "lines", lines_hori)
+      self.lines_hori = lines_hori
       for line in lines_hori:
         x1, y1, x2, y2 = line[0]
-        drawAxis(img_out, (x1, y1), (x2, y2), (0, 255, 255), 5)
-        cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 10)
+        # drawAxis(img_out, (x1, y1), (x2, y2), (0, 255, 255), 5)
+        # cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
     
     # ---------------------------------------------- #
     # lines intersections
     # ---------------------------------------------- #
     
+    self.intersection_points = []
     intersection_points = None
     if lines_hori is not None and lines_vert is not None:
       intersection_points = find_intersection_points(lines_vert, lines_hori)
       if intersection_points is not None:
         # draw intersection points as circles
-        self.add_layer("intersections", "circles", intersection_points)
+        self.add_layer("intersections", "points", intersection_points)
+        self.intersection_points = intersection_points
         for point in intersection_points:
-          cv2.circle(img_out, (int(point[0]), int(point[1])), 50, (125, 255, 255), 10)
+          cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 255, 255), 1)
     
     # ---------------------------------------------- #
     # circles lines intersections
@@ -133,59 +179,94 @@ class Classifier:
     
     intersecting_circles, non_intersecting_circles = find_circle_line_intersections(lines_hori, island_circles)
     
+    self.intersecting_circles = []
     if intersecting_circles is not None:
       self.add_layer("intersecting_islands", "circles", intersecting_circles)
+      self.intersecting_circles = intersecting_circles
       for circle in intersecting_circles:
         center, radius = circle
         # cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 3)
     
+    self.non_intersecting_circles = []
     if non_intersecting_circles is not None:
       self.add_layer("non_intersecting_islands", "circles", non_intersecting_circles)
+      self.non_intersecting_circles = non_intersecting_circles
       for circle in non_intersecting_circles:
         center, radius = circle
-        cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 4)    
+        # cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 1)    
     
     # ---------------------------------------------- #
     # embrio & faults
     # ---------------------------------------------- #
     
+    self.embrio_circle = []
     img_out, embrio_circle, circle_faults = embrio_check(img_out, outer_contour)
     if embrio_circle is not None:
       (center, radius) = embrio_circle
-      cv2.circle(img_out, center, radius, (0, 0, 255), -1)
-      self.add_layer("embrio_circle", "circle", embrio_circle)
-    
-    # if circle_faults is not None:
-    #   for (center, radius) in circle_faults:
-    #     cv2.circle(img_out, (int(center[0]),int(center[1])), radius, (255, 0, 0), -1)
-    #   self.layers.append({
-    #     "name": "circle_faults",
-    #     "type": "circles",
-    #     "data": circle_faults
-    #   })
+      # cv2.circle(img_out, center, radius, (0, 0, 255), 1)
+      self.add_layer("embrio_circle", "circles", [embrio_circle])
+      self.embrio_circle = [embrio_circle]
+    return True
 
-    # ---------------------------------------------- #
-    # draw things 
-    # ---------------------------------------------- #
+  def draw_elements(self, img_out):
 
-    # draw rice contour
-    cv2.drawContours(img_out, [outer_contour], 0, (255,0,0), 2)
-    # draw bounding box
-    box = cv2.boxPoints(rect)
-    box = np.int0(box)
-    #cv2.drawContours(img_out,[box],0,(0,0,255),10)
+    for outer_contour in self.outer_contour:
+      cv2.drawContours(img_out, outer_contour, 0, (255,0,0), 2)
     
-    self.add_layer("bounding_box", "contours", [box])
+    for line in self.lines_hori:
+      x1, y1, x2, y2 = line[0]
+      cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 2)
+    
+    for line in self.lines_vert:
+      x1, y1, x2, y2 = line[0]
+      cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 2)
+  
+    for point in self.intersection_points:
+      cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 255, 255), 1)
+        
+    for circle in self.intersecting_circles:
+      center, radius = circle
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 3)
+    
+    for circle in self.non_intersecting_circles:
+      center, radius = circle
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 3)
 
-    with open('layers.json', 'w', encoding='utf-8') as f:
-      json.dump(self.layers, f, ensure_ascii=False, cls=NumpyArrayEncoder)
-    
+    # print("draw elements")
+    # for layer in self.layers:
+    #   t = layer["type"]
+    #   data = json.loads(layer["data"])
+    #   print("data", data)
+    #   if t == "points": # draw intersection poitns
+    #     for p in data:
+    #       cv2.circle(img_out, (int(p[0]), int(p[1])), 10, (125, 255, 255), 1)
+    #   elif t == "circles": # draw isand circles and embrios
+    #     for c in data:
+    #       print(layer["name"], c)
+    #       center = c[0]
+    #       # radius = c[1]
+    #       # cv2.circle(img_out, center, radius, (0, 255, 0), 1)
+    #   elif t == "lines": # draw vertical and horizontal lines
+    #     for line in data:
+    #       x1, y1, x2, y2 = line[0]
+    #       cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 2)
+    #   elif t == "contours": # draw riice contour and island contour
+    #     for c in data:
+    #       print(layer["name"], c)
+    #       cv2.drawContours(img_out, [c], 0, (255,0,0), 2)
+    #   elif t == "contours": # draw riice contour and island contour
+    #     for c in data:
+    #       print(layer["name"], c)
+    #       cv2.drawContours(img_out, c, 0, (255,0,0), 2)
+    # self.clear_layers()
     return img_out
 
-  def add_layer(self, name, type, data):
+
+  def add_layer(self, name, _type, data):
+    print("add_layer", name, len(self.layers))
     self.layers.append({
       "name": name,
-      "type": type,
+      "type": _type,
       "data": data
     })
   
@@ -193,8 +274,20 @@ class Classifier:
   def test(self, img_input):
     self.results = { 'test': 'test'}
     self.img_out = img_input.copy()
-    cv2.putText(self.img_out, "test", (200,200), cv2.FONT_HERSHEY_SIMPLEX, 10, (255,0,0), 10)
+    cv2.putText(self.img_out, "test", (200,200), cv2.FONT_HERSHEY_SIMPLEX, 10, (255,0,0), 2)
     return self.img_out
 
   def clear_layers(self):
-    self.layers = []
+    self.layers.clear()
+    print("clear_layers", len(self.layers))
+
+  def clear_vars(self):
+    self.outer_contour = []
+    self.island_circles = []
+    self.inner_contours = []
+    self.lines_hori = []
+    self.lines_vert = []
+    self.intersecting_circles = []
+    self.non_intersecting_circles = []
+    self.embrio_circle = []
+    self.intersection_points = []

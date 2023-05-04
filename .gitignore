@@ -2,9 +2,10 @@
 # *.png
 .env
 dataset/
+rice_data/
 dataset_export/
 
-
+layers.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

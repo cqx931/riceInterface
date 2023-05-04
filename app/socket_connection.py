@@ -31,4 +31,7 @@ class SocketClient:
     if (self.is_connected == False):
       print("socket not connected")
       return False
-    self.socketClient.emit(message, data)
+    try:
+      self.socketClient.emit(message, data)
+    except socketio.exceptions.BadNamespaceError as err:
+      print("Error sending message")

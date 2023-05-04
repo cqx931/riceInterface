@@ -13,6 +13,10 @@ from Debug import debug
 from socket_connection import SocketClient
 from Interpreter import Interpreter
 # standard Python
+from image_processing import image_diff
+import time  
+
+IMAGE_DIFF_THRESHOLD = 0.01
 
 socketio_client = SocketClient()
 socketio_client.connect("http://localhost:3000")
@@ -27,8 +31,13 @@ TEST_IMAGE_PATH = os.environ.get("TEST_IMAGE_PATH")
 DATASET_EXPORT_PATH = "dataset_export/"
 RASPBERRY_PI = "192.168.1.22"
 STREAM_SNAPSHOT = "http://" + RASPBERRY_PI + ":8080/?action=snapshot"
+
+INTERVAL_SECONDS = 2
+
 # full server url for connection to the socket
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
+
+conter = 0
 
 # default values
 # foo = 0
@@ -88,16 +97,43 @@ def init():
 
 def stream():
   # TODO: try if there is a connection
-
+  is_new_frame = False
   lastFrame = None
+  sent_results = False
+  has_rice = False
   while stream_on:
     image = imutils.url_to_image(STREAM_SNAPSHOT)
     if np.array_equal(image, lastFrame) :
       img_out = image
     else: # if anything changes
-      img_raw = image
-      img_out = classifier.run(img_raw)
+      # avoid first frame exception
+      found = False
+      # if its first frame
+      if lastFrame is None:
+        lastFrame = image
+        start_time = time.time()
+        classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate     
+        found = classifier.process(image)
+        has_rice = found
+      
+      # first check if the frames are diff enough, only compute when its stable
+      if image_diff(lastFrame, image) > IMAGE_DIFF_THRESHOLD: 
+        classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate  
+        found = classifier.process(image)
+        has_rice = found
+        if found:
+          sendLayers()
+          start_time = time.time()
+        else:
+          #if there is no rice in a new frame !
+          sendClear() # clear front end
+          sent_results = False
       lastFrame = image
+      img_out = classifier.draw_elements(image)
+    # print(has_rice, sent_results , time.time() - start_time)
+    if has_rice and sent_results == False and time.time() - start_time > INTERVAL_SECONDS:
+      sent_results = sendResults()
+
     cv2.imshow("out", img_out)
     if cv2.waitKey(1) & 0xFF == ord('q'):
       break
@@ -165,13 +201,25 @@ def analyzeResults():
   
 def sendResults():
   results = interpreter.analyse()
-  print("results", results)
+  print("send results", results)
+  if len(results) > 0:
+    #print("send results", results)
+    socketio_client.sendMessage('results', results)
+    classifier.clear_layers()
+    return True
+  else:
+    return False
+
+def sendLayers():
   layers = classifier.get_json_layers()
-  classifier.clear_layers()
   socketio_client.sendMessage('layers', layers)
+  print("send layers", len(layers))
+  # classifier.clear_layers()
+
+
+def sendClear():
+  socketio_client.sendMessage('clear', "")
+  print("send clear!")
   
-  pass  
-
-
 # run!
 init()
