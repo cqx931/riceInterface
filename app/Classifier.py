@@ -14,7 +14,7 @@ VERTICAL_MIN_DISTANCE=100
 # horizontal line parameters
 HORIZONTAL_THRESHOLD=50
 HORIZONTAL_MIN_LINE_LENGTH=80
-HORIZONTAL_MAX_LINE_GAP=800
+HORIZONTAL_MAX_LINE_GAP=900
 HORIZONTAL_MIN_DISTANCE=50
 
 class Classifier:
@@ -33,6 +33,7 @@ class Classifier:
   non_intersecting_circles = []
   embrio_circle = []
   intersection_points = []
+  horizontal_intersection_points = []
 
   def __init__(self, mode):
     #self.model = mode
@@ -91,7 +92,7 @@ class Classifier:
       self.clear_vars()
       self.clear_layers()
       return False
-    self.outer_contour = outer_contour
+    #self.outer_contour = [outer_contour]
     self.add_layer("outer_contour", "contour", [outer_contour]) #(#)#
     self.outer_contour = [outer_contour]
     #print("rice_area", rice_area)
@@ -171,6 +172,21 @@ class Classifier:
         self.intersection_points = intersection_points
         for point in intersection_points:
           cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 255, 255), 1)
+
+    # ---------------------------------------------- #
+    # horizontal lines intersections
+    # ---------------------------------------------- #
+    
+    self.horizontal_intersection_points = []
+    horizontal_intersection_points = None
+    if lines_hori is not None and lines_vert is not None:
+      horizontal_intersection_points = find_intersection_points(lines_hori, lines_hori)
+      if horizontal_intersection_points is not None:
+        # draw intersection points as circles
+        self.add_layer("horizontal_intersections", "points", horizontal_intersection_points)
+        self.horizontal_intersection_points = horizontal_intersection_points
+        for point in horizontal_intersection_points:
+          cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 255, 255), 1)
     
     # ---------------------------------------------- #
     # circles lines intersections
@@ -208,28 +224,35 @@ class Classifier:
     return True
 
   def draw_elements(self, img_out):
-
+    
     for outer_contour in self.outer_contour:
-      cv2.drawContours(img_out, outer_contour, 0, (255,0,0), 2)
+      cv2.drawContours(img_out, [outer_contour], 0, (255,0,0), 2)
     
     for line in self.lines_hori:
       x1, y1, x2, y2 = line[0]
-      cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 2)
+      cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 1)
     
     for line in self.lines_vert:
       x1, y1, x2, y2 = line[0]
-      cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 2)
+      cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 1)
   
     for point in self.intersection_points:
       cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 255, 255), 1)
+    
+    for point in self.horizontal_intersection_points:
+      cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 0, 255), 1)
         
     for circle in self.intersecting_circles:
       center, radius = circle
-      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 3)
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 0, 255), 1)
     
     for circle in self.non_intersecting_circles:
       center, radius = circle
-      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 3)
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 1)
+
+    for circle in self.embrio_circle:
+      center, radius = circle
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (255, 0, 0), 1)
 
     # print("draw elements")
     # for layer in self.layers:
@@ -289,3 +312,4 @@ class Classifier:
     self.non_intersecting_circles = []
     self.embrio_circle = []
     self.intersection_points = []
+    self.horizontal_intersection_points = []

@@ -113,9 +113,12 @@ def stream():
         start_time = time.time()
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate     
         found = classifier.process(image)
+        if found:
+          sendLayers()
         has_rice = found
       
       # first check if the frames are diff enough, only compute when its stable
+      print("diff", image_diff(lastFrame, image))
       if image_diff(lastFrame, image) > IMAGE_DIFF_THRESHOLD: 
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate  
         found = classifier.process(image)
@@ -151,7 +154,7 @@ def run_random_image():
   for i in range(0, 16):
     # load test image
     path = getRandomFile(DATASET_PATH)
-    print("random image file", path)
+    # print("random image file", path)
     img_raw = cv2.imread(path, 0)
     img_out = classifier.run(img_raw)
     # debug.push_image(img_raw, "raw")
@@ -183,6 +186,7 @@ def run_categories_images(specific_category = None):
   
 def run_all_dataset():
   files = getAllImages(DATASET_PATH)
+<<<<<<< HEAD
   with open('results.txt', 'a') as fd:
     for i, f in enumerate(files):
       img_raw = readImage(f)
@@ -196,6 +200,16 @@ def run_all_dataset():
       # save image
       if args.save_file:
         cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
+=======
+  for i, f in enumerate(files):
+    img_raw = cv2.imread(f, 0)
+    img_out = classifier.run(img_raw)
+    filename = os.path.split(f)[1].split('.')[0] + "_opencv.jpg"
+    # print("filename", filename)
+    # save image
+    if args.save_file:
+      cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
+>>>>>>> 8039f6895ac7352fe78987f099b05dd8fb7c6414
   
   
 def analyzeResults():
@@ -203,7 +217,7 @@ def analyzeResults():
   
 def sendResults():
   results = interpreter.analyse()
-  print("send results", results)
+  # print("send results", results)
   if len(results) > 0:
     #print("send results", results)
     socketio_client.sendMessage('results', results)
@@ -215,7 +229,7 @@ def sendResults():
 def sendLayers():
   layers = classifier.get_json_layers()
   socketio_client.sendMessage('layers', layers)
-  print("send layers", len(layers))
+  # print("send layers", len(layers))
   # classifier.clear_layers()
 
 

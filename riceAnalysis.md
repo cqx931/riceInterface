@@ -5,6 +5,18 @@
 - No. & Position Info of **Islands**("*")
 - No. & Position Info of **Faults**("<")
 
+### Interpreter Values
+- **num horizontal lines** ("\_")
+- **vertical lines** ("\|") 
+- **line intersections** ("\+") 
+- **lonely islands** ("\*")
+
+no text influence
+
+- **fault** ("º")
+- **intersected islands** ("ø")
+
+
 ### Pattern Analysis
 - Possible to tell the difference between `*|*` and `|**` (or even `**|` if a coordination can be set)?
 
@@ -27,3 +39,5 @@
 | 14 |Mirror| \| \| |p4_rice37, p6_rice1| Two evenly distributed cracks, as if they are mirroring each other|
 | 15 |The Three Parallels| \|\|\| |p5_rice37 | |
 | 16 |Four cracks| \|\|\|\| | p7_rice41|sth bad?|
+
+
