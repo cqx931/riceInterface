@@ -119,6 +119,7 @@ def stream():
         has_rice = found
       
       # first check if the frames are diff enough, only compute when its stable
+      print("diff", image_diff(lastFrame, image))
       if image_diff(lastFrame, image) > IMAGE_DIFF_THRESHOLD: 
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate  
         found = classifier.process(image)
