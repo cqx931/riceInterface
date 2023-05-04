@@ -15,6 +15,7 @@ from Interpreter import Interpreter
 # standard Python
 from image_processing import image_diff
 import time  
+from categories import detect_category
 
 IMAGE_DIFF_THRESHOLD = 0.01
 
@@ -186,30 +187,21 @@ def run_categories_images(specific_category = None):
   
 def run_all_dataset():
   files = getAllImages(DATASET_PATH)
-<<<<<<< HEAD
   with open('results.txt', 'a') as fd:
     for i, f in enumerate(files):
       img_raw = readImage(f)
       img_out = classifier.run(img_raw)
       results = interpreter.analyse()
+      category = detect_category(results)
       cv2.putText(img_out, results, (100, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (120, 222, 0), 5)
-      filename = os.path.split(f)[1].split('.')[0] + "_opencv.jpg"
+      filename = category + " " + results + " " + os.path.split(f)[1].split('.')[0] + ".jpg"
       print("filename", filename + " " + results)
       fd.write(f'\n{filename + "    " + results}')
+      img_out = classifier.draw_elements(img_raw)
       classifier.clear_layers()
       # save image
       if args.save_file:
         cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
-=======
-  for i, f in enumerate(files):
-    img_raw = cv2.imread(f, 0)
-    img_out = classifier.run(img_raw)
-    filename = os.path.split(f)[1].split('.')[0] + "_opencv.jpg"
-    # print("filename", filename)
-    # save image
-    if args.save_file:
-      cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
->>>>>>> 8039f6895ac7352fe78987f099b05dd8fb7c6414
   
   
 def analyzeResults():

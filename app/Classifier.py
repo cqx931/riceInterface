@@ -230,29 +230,29 @@ class Classifier:
     
     for line in self.lines_hori:
       x1, y1, x2, y2 = line[0]
-      cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 1)
+      cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255),  2)
     
     for line in self.lines_vert:
       x1, y1, x2, y2 = line[0]
-      cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 1)
+      cv2.line(img_out, (x1, y1), (x2, y2), (255, 0, 0), 2)
   
     for point in self.intersection_points:
-      cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 255, 255), 1)
+      cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 255, 255),  2)
     
     for point in self.horizontal_intersection_points:
-      cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 0, 255), 1)
+      cv2.circle(img_out, (int(point[0]), int(point[1])), 10, (125, 0, 255),  2)
         
     for circle in self.intersecting_circles:
       center, radius = circle
-      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 0, 255), 1)
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 0, 255),  2)
     
     for circle in self.non_intersecting_circles:
       center, radius = circle
-      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0), 1)
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0),  2)
 
     for circle in self.embrio_circle:
       center, radius = circle
-      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (255, 0, 0), 1)
+      cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (255, 0, 0),  2)
 
     # print("draw elements")
     # for layer in self.layers:

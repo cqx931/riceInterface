@@ -17,7 +17,7 @@ def getAllImages(path):
   return files
 
 def readImage(path):
-  img = cv2.imread(path, 0)
+  img = cv2.imread(path)
   # resize image
   img = cv2.resize(img, (RESOLUTION, RESOLUTION))
   return img
