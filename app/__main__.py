@@ -17,7 +17,7 @@ from image_processing import image_diff
 import time  
 from categories import detect_category
 
-IMAGE_DIFF_THRESHOLD = 0.01
+IMAGE_DIFF_THRESHOLD = 0.012
 
 socketio_client = SocketClient()
 socketio_client.connect("http://localhost:3000")
