@@ -81,6 +81,7 @@ class Classifier:
     # brighter image for outer contour detection 
     img_lighter = img_out.copy() # equalizeLight(img_out, 20) # todo implement
     img_otsu = otsu_thresholding(img_raw)
+    # cv2.imshow("img_otsu", img_otsu)
     # debug.push_image(img_otsu, "otsu")
     outer_contour = findMaxContour(img_otsu)
     if outer_contour is None: # if there is no outer contour, no sense doing anything else
@@ -106,7 +107,7 @@ class Classifier:
     img_masked = getMaskedImage(img_raw, outer_contour)
     img_binary = threshold_and_mask(img_masked, exclude_percent=10)  
     img_binary_islands = threshold_and_mask(equalize_image(img_masked), exclude_percent=6)
-  
+    # cv2.imshow("img_binary_islands", img_binary_islands)
     if (len(img_out.shape) == 1):
       img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
 
@@ -334,3 +335,4 @@ class Classifier:
     self.embrio_circle = []
     self.intersection_points = []
     self.horizontal_intersection_points = []
+    self.triangle_faults = []

@@ -7,8 +7,8 @@ from math import atan2, cos, sin, sqrt, pi
 # import dip.image as im
 
 ISLAND_SIZE_TRESHOLD = 1000
-TRIANGLE_AREA_TRESHOLD = 6000
-CONTOUR_TRESHOLD = 12
+TRIANGLE_AREA_TRESHOLD = 10000
+CONTOUR_TRESHOLD = 13
 
 # otsu thresholding
 
