@@ -16,4 +16,6 @@
 
 ### what to do:
 
-test new parameters on the database and see the ratio of predictions
+- [x] test new parameters on the database and see the ratio of predictions
+- [ ] try to implement the mouth parameter (testing the category)
+- [ ] 

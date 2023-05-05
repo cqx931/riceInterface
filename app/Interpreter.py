@@ -52,8 +52,14 @@ class Interpreter:
       num_islands_cross= len(ast.literal_eval(self.classifier.get_layer_data("intersecting_islands")))
     else:
       num_islands_cross= len(self.classifier.get_layer_data("intersecting_islands"))
+    
+    # triangle_faults
+    if type(self.classifier.get_layer_data("triangle_faults")) == str:
+      num_triangle_faults = len(ast.literal_eval(self.classifier.get_layer_data("triangle_faults")))
+    else:
+      num_triangle_faults = len(self.classifier.get_layer_data("triangle_faults"))
 
-    s = '_'*num_horizontal_lines + '|'*num_vertical_lines + '+'*num_intersections + 'x'*num_horizontal_intersections + 'º'*embrios + '*'*num_islands
+    s = '_'*num_horizontal_lines + '|'*num_vertical_lines + '+'*num_intersections + 'x'*num_horizontal_intersections + '>'*num_triangle_faults + 'º'*embrios + '*'*num_islands
     # scramble string
     #s = ''.join(random.sample(s,len(s)))
     return s

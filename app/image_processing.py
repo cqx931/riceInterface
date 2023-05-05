@@ -7,6 +7,8 @@ from math import atan2, cos, sin, sqrt, pi
 # import dip.image as im
 
 ISLAND_SIZE_TRESHOLD = 1000
+TRIANGLE_AREA_TRESHOLD = 6000
+CONTOUR_TRESHOLD = 12
 
 # otsu thresholding
 
@@ -17,7 +19,7 @@ def otsu_thresholding(img):
     # Otsu's thresholding after Gaussian filtering
     # blur = cv2.GaussianBlur(img,(5,5),0)
     # ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    ret, img_binary = cv2.threshold(img, 10, 255, cv2.THRESH_BINARY)
+    ret, img_binary = cv2.threshold(img, CONTOUR_TRESHOLD, 255, cv2.THRESH_BINARY)
     return img_binary
 
 # find countours, expects otus thresholded image
@@ -351,8 +353,21 @@ def embrio_check(img, outer_contour):
     output = img.copy()
     # output = cv2.cvtColor(output,cv2.COLOR_GRAY2BGR)
 
-    eps = 0.001
-
+    eps = 0.01
+    
+    faults_contours = []
+    faults_triangles = []
+    faults_mask = None
+    
+    rice_center = getContourCenterPoint(outer_contour)
+    rice_rect = getContourRect(outer_contour)
+    (center, axes, angle) = rice_rect
+    (x, y) = center
+    (w, h) = axes
+    center_circle_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+    cv2.circle(center_circle_mask, (int(x), int(y)), int(w/2), (255, 255, 255), -1)
+    
+    
     # approximate the contour
     peri = cv2.arcLength(outer_contour, True)
     approx = cv2.approxPolyDP(outer_contour, eps * peri, True)
@@ -360,7 +375,7 @@ def embrio_check(img, outer_contour):
 
     hull = cv2.convexHull(outer_contour)
     if len(hull) < 10:
-      return None, None, None
+      return None, None, None, None
 
     #cv2.drawContours(output, [hull], 0, (0, 255, 0), 10)
     
@@ -379,6 +394,7 @@ def embrio_check(img, outer_contour):
     rice_area = cv2.contourArea(outer_contour)
     hull_area = cv2.contourArea(hull)
     area_diff = (hull_area - rice_area)/rice_area
+    print("area_diff", area_diff)
     # cv2.putText(output, str(area_diff), (50, 500), cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 0, 255), 3)
     circle_faults = []
     if area_diff > 0.05:
@@ -389,13 +405,36 @@ def embrio_check(img, outer_contour):
       # Invert the ellipse mask & Get the intersection between the contour mask and the inverted ellipse mask
       inverted_hull_mask = cv2.bitwise_not(hull_mask)
       faults_mask = cv2.bitwise_not(cv2.bitwise_or(mask, inverted_hull_mask))
+      
+      faults_mask = cv2.bitwise_and(faults_mask, center_circle_mask)
+      
       faults_contours, _ = cv2.findContours(faults_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
       for fault_contour in faults_contours:
         fault_area = cv2.contourArea(fault_contour)
+        # triangle
+        triangle = cv2.minEnclosingTriangle(fault_contour)
+        # print("triangle", triangle)
+        # faults_triangles.append(triangle)
         centerPoint, radius = cv2.minEnclosingCircle(fault_contour)
+        cv2.putText(faults_mask, str(fault_area), (int(centerPoint[0]), int(centerPoint[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        # cv2.circle(faults_mask, (int(centerPoint[0]), int(centerPoint[1])), int(radius), (255, 255, 255), 2)
+        # draw triangle 
+        # cv2.drawContours(faults_mask, [triangle], 0, (255, 255, 255), 2)
+        
+        # Convert the triangle to a list of points
+        pts = np.array([triangle[1][0][0], triangle[1][1][0], triangle[1][2][0]]).astype(int)
+        triangle_area = cv2.contourArea(pts)
+        print("triangle_area", triangle_area)
+        # Draw the triangle on the original image
+        faults_triangles.append(pts)
         radius = int(cv2.pointPolygonTest(fault_contour, centerPoint, True))
         if radius > 0:
           circle_faults.append((centerPoint, radius))
+      faults_triangles = filter_triangles(faults_triangles, 100, 500)
+      faults_triangles = filter_triangles_by_circle(faults_triangles, rice_center[0], rice_center[1], w/2)
+      
+      for triangle in faults_triangles:
+        faults_mask = cv2.polylines(faults_mask, [pts], True, (255, 255, 255), 3)
     
     # Create a blank image for the ellipse mask
     ellipse_mask = np.zeros(img.shape[:2], dtype=np.uint8)
@@ -406,7 +445,7 @@ def embrio_check(img, outer_contour):
     embrio_mask = cv2.bitwise_not(cv2.bitwise_or(mask, inverted_ellipse_mask))
     embrio_contours, _ = cv2.findContours(embrio_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if len(embrio_contours) < 1:
-      return None, None, None
+      return None, None, None, None
 
     embrio_contour = max(embrio_contours, key=cv2.contourArea)
 
@@ -419,7 +458,7 @@ def embrio_check(img, outer_contour):
     if radius > 10 and radius < 100:
       embrio_circle = (centerPoint, radius)
     
-    return output, embrio_circle, circle_faults
+    return output, embrio_circle, faults_triangles, faults_mask
 
 
 def find_largest_circle(mask):
@@ -519,3 +558,34 @@ def image_diff(img1, img2):
   diff_norm = cv2.normalize(diff, None, 0, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
   diff_mean = cv2.mean(diff_norm)[0]
   return diff_mean
+
+# Calculate the length of a side given the coordinates of its endpoints
+def side_length(p1, p2):
+  return np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
+
+# Filter out triangles whose sides are longer than the threshold
+def filter_triangles(triangles, min_threshold=5, max_threshold=100, area_treshold=TRIANGLE_AREA_TRESHOLD):
+  filtered_triangles = []
+  for pts in triangles:
+      triangle_area = cv2.contourArea(pts)
+      if triangle_area < area_treshold:
+        continue
+      side_lengths = [side_length(pts[i], pts[(i+1)%3]) for i in range(3)]
+      # print("side_lengths", side_lengths)
+      if all(min_threshold <= side_length <= max_threshold for side_length in side_lengths):
+          filtered_triangles.append(pts)
+  return filtered_triangles
+
+def filter_triangles_by_circle(triangles, cx, cy, r):
+  filtered_triangles = []
+  for triangle in triangles:
+      pts = triangle
+      is_inside_circle = False
+      for pt in pts:
+          dist_to_center = np.sqrt((pt[0]-cx)**2 + (pt[1]-cy)**2)
+          if dist_to_center < r:
+              is_inside_circle = True
+              break
+      if is_inside_circle:
+          filtered_triangles.append(triangle)
+  return filtered_triangles

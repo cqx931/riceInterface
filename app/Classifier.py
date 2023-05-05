@@ -34,6 +34,7 @@ class Classifier:
   embrio_circle = []
   intersection_points = []
   horizontal_intersection_points = []
+  triangle_faults = []
 
   def __init__(self, mode):
     #self.model = mode
@@ -215,12 +216,25 @@ class Classifier:
     # ---------------------------------------------- #
     
     self.embrio_circle = []
-    img_out, embrio_circle, circle_faults = embrio_check(img_out, outer_contour)
+    img_out, embrio_circle, triangle_faults, faults_mask = embrio_check(img_out, outer_contour)
     if embrio_circle is not None:
       (center, radius) = embrio_circle
       # cv2.circle(img_out, center, radius, (0, 0, 255), 1)
       self.add_layer("embrio_circle", "circles", [embrio_circle])
       self.embrio_circle = [embrio_circle]
+    self.triangle_faults = []
+    if triangle_faults is not None:
+      self.triangle_faults = triangle_faults
+      if len(triangle_faults) > 0: 
+        self.add_layer("triangle_faults", "triangles", triangle_faults)
+      # img_circles = img_raw.copy()
+      #   for triangle in triangle_faults:
+      #     (center, radius) = circle
+      #     # img_circles = cv2.circle(img_circles, (int(center[0]), int(center[1])), radius, (0, 255, 0), -1)
+      #     self.add_layer("circle_faults", "circles", [circle])
+      #   # debug.push_image(img_circles, "circle_faults")
+      # if faults_mask is not None:
+      #  debug.push_image(faults_mask, "faults_mask")
     return True
 
   def draw_elements(self, img_out):
@@ -253,6 +267,13 @@ class Classifier:
     for circle in self.embrio_circle:
       center, radius = circle
       cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (255, 0, 0),  2)
+    
+    for triangle in self.triangle_faults:
+      cv2.polylines(img_out, [triangle], True, (0, 255, 0), 2)
+    
+    # for circle in self.circle_faults:
+    #   center, radius = circle
+    #   cv2.circle(img_out, (int(center[0]), int(center[1])), int(radius), (0, 255, 0),  -1)
 
     # print("draw elements")
     # for layer in self.layers:

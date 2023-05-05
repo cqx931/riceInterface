@@ -175,11 +175,13 @@ def run_categories_images(specific_category = None):
       # print("name", name, path)
       if path == None:
         break
-      img_raw = cv2.imread(path, 0)
-      img_out = classifier.run(img_raw)
+      img_raw = readImage(path)
+      classifier.run(img_raw)
+      img_out = classifier.draw_elements(img_raw)
       text = c["example"][0] + " " + str(c["index"]) + " " + c["title"] + " " + c["symbol"]
       debug.push_image(img_out, text)
   sendResults()
+  print("len(debug.images)", len(debug.images))
   if len(debug.images) % 8 == 0:
     debug.display_images()
   else:
