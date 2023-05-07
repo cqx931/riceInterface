@@ -7,7 +7,7 @@ from math import atan2, cos, sin, sqrt, pi
 # import dip.image as im
 
 ISLAND_SIZE_TRESHOLD = 1000
-TRIANGLE_AREA_TRESHOLD = 10000
+TRIANGLE_AREA_TRESHOLD = 5000
 CONTOUR_TRESHOLD = 13
 
 # otsu thresholding
@@ -451,7 +451,7 @@ def embrio_check(img, outer_contour):
 
     embrio_circle = None
     if len(embrio_contour) < 10:
-      return None, None, circle_faults
+      return None, None, None, None
     centerPoint = getContourCenterPoint(embrio_contour)
     radius = abs(int(cv2.pointPolygonTest(embrio_contour, centerPoint, True)))
     # print("embrio radius", radius)

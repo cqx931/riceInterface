@@ -16,6 +16,7 @@ from Interpreter import Interpreter
 from image_processing import image_diff
 import time  
 from categories import detect_category
+import sys
 
 IMAGE_DIFF_THRESHOLD = 0.02
 
@@ -34,7 +35,7 @@ RASPBERRY_PI = "192.168.1.22"
 STREAM_SNAPSHOT = "http://" + RASPBERRY_PI + ":8080/?action=snapshot"
 
 INTERVAL_SECONDS = 2
-
+RESTART_SECONDS = 60*5 # 60*5
 # full server url for connection to the socket
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
 
@@ -101,17 +102,24 @@ def stream():
   lastFrame = None
   sent_results = False
   has_rice = False
+  session_start_time = time.time()
+
   while stream_on:
     image = imutils.url_to_image(STREAM_SNAPSHOT)
+    if time.time() - session_start_time >= RESTART_SECONDS and time.time() - start_time >= 90:
+        print("RESTART BACKEND")
+        os.execv(sys.executable, ['python'] + sys.argv)
     if np.array_equal(image, lastFrame) :
       img_out = image
+
     else: # if anything changes
       # avoid first frame exception
       found = False
       # if its first frame
       if lastFrame is None:
         lastFrame = image
-        start_time = time.time()
+        sessin_start_time = time.time()
+        start_time = sessin_start_time
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate     
         found = classifier.process(image)
         if found:
@@ -119,7 +127,7 @@ def stream():
         has_rice = found
       
       # first check if the frames are diff enough, only compute when its stable
-      print("diff", image_diff(lastFrame, image))
+      # print("diff", image_diff(lastFrame, image))
       if image_diff(lastFrame, image) > IMAGE_DIFF_THRESHOLD: 
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate  
         found = classifier.process(image)
