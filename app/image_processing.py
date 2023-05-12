@@ -422,6 +422,8 @@ def embrio_check(img, outer_contour):
         # cv2.drawContours(faults_mask, [triangle], 0, (255, 255, 255), 2)
         
         # Convert the triangle to a list of points
+        if triangle is None:
+            continue
         pts = np.array([triangle[1][0][0], triangle[1][1][0], triangle[1][2][0]]).astype(int)
         triangle_area = cv2.contourArea(pts)
         print("triangle_area", triangle_area)
