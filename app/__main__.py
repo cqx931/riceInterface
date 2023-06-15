@@ -14,7 +14,7 @@ from socket_connection import SocketClient
 from Interpreter import Interpreter
 # standard Python
 from image_processing import image_diff
-import time  
+import time
 from categories import detect_category
 import sys
 
@@ -47,6 +47,7 @@ conter = 0
 # Argument parser
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('-d', '--debug_mode', default=True, action='store_true')
+parser.add_argument('-dm', '--demo', default=False, action='store_true')
 parser.add_argument('-t', '--test', default=False, action='store_true')
 parser.add_argument('-r', '--random', default=False, action='store_true')
 parser.add_argument('-s', '--stream', default=False, action='store_true')
@@ -77,11 +78,14 @@ classifier = Classifier(classifier_mode)
 interpreter = Interpreter(classifier)
 stream_on = True
 
-def init(): 
+def init():
   # start opencv
   if args.test == True:
     print("Running test")
     run_test_image()
+  if args.demo == True:
+    print("Demo")
+    demo()
   elif args.random == True:
     print("Running random", args.random)
     run_random_image()
@@ -94,7 +98,7 @@ def init():
   elif args.all_dataset == True:
     print("Running stream")
     run_all_dataset()
-  
+
 
 def stream():
   # TODO: try if there is a connection
@@ -120,16 +124,16 @@ def stream():
         lastFrame = image
         sessin_start_time = time.time()
         start_time = sessin_start_time
-        classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate     
+        classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate
         found = classifier.process(image)
         if found:
           sendLayers()
         has_rice = found
-      
+
       # first check if the frames are diff enough, only compute when its stable
       # print("diff", image_diff(lastFrame, image))
-      if image_diff(lastFrame, image) > IMAGE_DIFF_THRESHOLD: 
-        classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate  
+      if image_diff(lastFrame, image) > IMAGE_DIFF_THRESHOLD:
+        classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate
         found = classifier.process(image)
         has_rice = found
         if found:
@@ -159,6 +163,18 @@ def run_test_image():
   # cv2.imshow("out", img_out)
   # cv2.waitKey(0)
 
+def demo():
+  # load test image
+  print("Test image:")
+  print(TEST_IMAGE_PATH)
+  img_raw = cv2.imread(TEST_IMAGE_PATH, 0)
+  classifier.process(img_raw)
+  img_out = classifier.draw_elements(img_raw)
+  cv2.imshow("out", img_out)
+  sendLayers()
+  sendResults()
+  cv2.waitKey(0)
+
 def run_random_image():
   for i in range(0, 16):
     # load test image
@@ -172,7 +188,7 @@ def run_random_image():
   # analyzeResults()
   # debug.display()
   debug.display_images()
-  
+
 def run_categories_images(specific_category = None):
   for c in interpreter.categories:
     if specific_category != None and c["index"] != specific_category:
@@ -193,8 +209,8 @@ def run_categories_images(specific_category = None):
   if len(debug.images) % 8 == 0:
     debug.display_images()
   else:
-    debug.display()  
-  
+    debug.display()
+
 def run_all_dataset():
   files = getAllImages(DATASET_PATH)
   with open('results.txt', 'a') as fd:
@@ -212,11 +228,11 @@ def run_all_dataset():
       # save image
       if args.save_file:
         cv2.imwrite(DATASET_EXPORT_PATH + filename, img_out)
-  
-  
+
+
 def analyzeResults():
   results = interpreter.analyse(classifier.get_layers())
-  
+
 def sendResults():
   results = interpreter.analyse()
   # print("send results", results)
@@ -238,6 +254,6 @@ def sendLayers():
 def sendClear():
   socketio_client.sendMessage('clear', "")
   print("send clear!")
-  
+
 # run!
 init()

@@ -90,7 +90,8 @@ class Classifier:
       return False
     rect = cv2.minAreaRect(outer_contour)
     rice_area = cv2.contourArea(outer_contour)
-    if rice_area < MIN_RICE_AREA:
+    # only check min_rice_area in stream mode
+    if self.mode == 'stream' and rice_area < MIN_RICE_AREA:
       self.clear_vars()
       self.clear_layers()
       return False
