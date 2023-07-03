@@ -242,8 +242,10 @@ def sendResults():
     classifier.clear_layers()
     return True
   else:
-    return False
-
+     socketio_client.sendMessage('results', " ")
+     classifier.clear_layers()
+     return False
+     
 def sendLayers():
   layers = classifier.get_json_layers()
   socketio_client.sendMessage('layers', layers)

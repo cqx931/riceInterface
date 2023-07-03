@@ -6,8 +6,9 @@ from math import atan2, cos, sin, sqrt, pi
 
 # import dip.image as im
 
-ISLAND_SIZE_TRESHOLD = 1000
-TRIANGLE_AREA_TRESHOLD = 5000
+ISLAND_MIN_SIZE = 50
+ISLAND_MAX_SIZE = 1000
+TRIANGLE_AREA_TRESHOLD = 2000
 CONTOUR_TRESHOLD = 13
 
 # otsu thresholding
@@ -96,7 +97,9 @@ def filterIslandContours(contours, aprox_outer):
         aprox_inner = cv2.approxPolyDP(c, 0.005 * peri, True)
 
         # Ignore contours that are too small
-        if area < ISLAND_SIZE_TRESHOLD:
+        if area < ISLAND_MIN_SIZE:
+            continue
+        if area > ISLAND_MAX_SIZE:
             continue
         # check if contours intersect with outer rice contour
         if contour_intersect(aprox_outer, aprox_inner):
@@ -189,7 +192,7 @@ def threshold_and_mask(image, exclude_percent=8):
     else:
       gray = image.copy()  # cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    gray = cv2.GaussianBlur(gray, (9, 9), 0)
+    gray = cv2.GaussianBlur(gray, (3, 3), 0)
 
     # apply Otsu's thresholding method
     _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -433,6 +436,7 @@ def embrio_check(img, outer_contour):
         if radius > 0:
           circle_faults.append((centerPoint, radius))
       faults_triangles = filter_triangles(faults_triangles, 100, 500)
+      # print(faults_triangles)
       faults_triangles = filter_triangles_by_circle(faults_triangles, rice_center[0], rice_center[1], w/2)
       
       for triangle in faults_triangles:
@@ -566,16 +570,16 @@ def side_length(p1, p2):
   return np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
 # Filter out triangles whose sides are longer than the threshold
-def filter_triangles(triangles, min_threshold=5, max_threshold=100, area_treshold=TRIANGLE_AREA_TRESHOLD):
+def filter_triangles(triangles, min_threshold=5, max_threshold=150, area_treshold=TRIANGLE_AREA_TRESHOLD):
   filtered_triangles = []
   for pts in triangles:
       triangle_area = cv2.contourArea(pts)
       if triangle_area < area_treshold:
         continue
       side_lengths = [side_length(pts[i], pts[(i+1)%3]) for i in range(3)]
-      # print("side_lengths", side_lengths)
-      if all(min_threshold <= side_length <= max_threshold for side_length in side_lengths):
-          filtered_triangles.append(pts)
+      print("side_lengths", side_lengths)
+    #   if all(min_threshold <= side_length <= max_threshold for side_length in side_lengths):
+      filtered_triangles.append(pts)
   return filtered_triangles
 
 def filter_triangles_by_circle(triangles, cx, cy, r):

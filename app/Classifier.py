@@ -7,15 +7,15 @@ from utils import *
 
 MIN_RICE_AREA = 50000
 # vertical lines paramenters
-VERTICAL_THRESHOLD=50
+VERTICAL_THRESHOLD=200 #min
 VERTICAL_MIN_LINE_LENGTH=200
-VERTICAL_MAX_LINE_GAP=50
-VERTICAL_MIN_DISTANCE=100
+VERTICAL_MAX_LINE_GAP=200
+VERTICAL_MIN_DISTANCE=50
 # horizontal line parameters
-HORIZONTAL_THRESHOLD=100
-HORIZONTAL_MIN_LINE_LENGTH=80
+HORIZONTAL_THRESHOLD=20 #min
+HORIZONTAL_MIN_LINE_LENGTH=100
 HORIZONTAL_MAX_LINE_GAP=900
-HORIZONTAL_MIN_DISTANCE=100
+HORIZONTAL_MIN_DISTANCE=50
 
 class Classifier:
 
@@ -85,6 +85,7 @@ class Classifier:
     # debug.push_image(img_otsu, "otsu")
     outer_contour = findMaxContour(img_otsu)
     if outer_contour is None: # if there is no outer contour, no sense doing anything else
+      print("no contour")
       self.clear_vars()
       self.clear_layers()
       return False
@@ -98,7 +99,7 @@ class Classifier:
     #self.outer_contour = [outer_contour]
     self.add_layer("outer_contour", "contour", [outer_contour]) #(#)#
     self.outer_contour = [outer_contour]
-    #print("rice_area", rice_area)
+    # print("rice_area", rice_area)
 
     # ---------------------------------------------- #
     # inner islands
