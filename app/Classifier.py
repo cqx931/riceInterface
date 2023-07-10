@@ -5,16 +5,20 @@ from image_processing import *
 import json
 from utils import *
 
+LINES_PERC = 10
+ISLAND_PERC = 6
+
+
 MIN_RICE_AREA = 50000
 # vertical lines paramenters
-VERTICAL_THRESHOLD=50
+VERTICAL_THRESHOLD=200
 VERTICAL_MIN_LINE_LENGTH=200
-VERTICAL_MAX_LINE_GAP=50
-VERTICAL_MIN_DISTANCE=100
+VERTICAL_MAX_LINE_GAP=700 # higher the more detections
+VERTICAL_MIN_DISTANCE=200
 # horizontal line parameters
-HORIZONTAL_THRESHOLD=100
+HORIZONTAL_THRESHOLD=50
 HORIZONTAL_MIN_LINE_LENGTH=80
-HORIZONTAL_MAX_LINE_GAP=900
+HORIZONTAL_MAX_LINE_GAP=2000
 HORIZONTAL_MIN_DISTANCE=100
 
 class Classifier:
@@ -106,8 +110,8 @@ class Classifier:
     
     # preprocess image
     img_masked = getMaskedImage(img_raw, outer_contour)
-    img_binary = threshold_and_mask(img_masked, exclude_percent=10)  
-    img_binary_islands = threshold_and_mask(equalize_image(img_masked), exclude_percent=6)
+    img_binary_lines = threshold_and_mask(img_masked, exclude_percent=LINES_PERC)  
+    img_binary_islands = threshold_and_mask(equalize_image(img_masked), exclude_percent=ISLAND_PERC)
     # cv2.imshow("img_binary_islands", img_binary_islands)
     if (len(img_out.shape) == 1):
       img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
@@ -136,7 +140,7 @@ class Classifier:
 
     # vertical line
     self.lines_vert = []
-    lines_vert = detect_trace(img_binary, threshold=VERTICAL_THRESHOLD, minLineLength=VERTICAL_MIN_LINE_LENGTH, maxLineGap=VERTICAL_MAX_LINE_GAP)
+    lines_vert = detect_trace(img_binary_lines, threshold=VERTICAL_THRESHOLD, minLineLength=VERTICAL_MIN_LINE_LENGTH, maxLineGap=VERTICAL_MAX_LINE_GAP)
     if lines_vert is not None:
       lines_vert = filter_lines_by_distance(lines_vert, min_distance=VERTICAL_MIN_DISTANCE)
       lines_vert = filter_lines_by_angle(lines_vert, angle, tolerance=20)
@@ -149,7 +153,7 @@ class Classifier:
     
     # horizontal line
     self.lines_hori = []
-    lines_hori = detect_trace(img_binary, threshold=HORIZONTAL_THRESHOLD, minLineLength=HORIZONTAL_MIN_LINE_LENGTH, maxLineGap=HORIZONTAL_MAX_LINE_GAP)
+    lines_hori = detect_trace(img_binary_lines, threshold=HORIZONTAL_THRESHOLD, minLineLength=HORIZONTAL_MIN_LINE_LENGTH, maxLineGap=HORIZONTAL_MAX_LINE_GAP)
     if lines_hori is not None:
       lines_hori = filter_lines_by_distance(lines_hori, min_distance=HORIZONTAL_MIN_DISTANCE)
       lines_hori = filter_lines_by_angle(lines_hori, angle-90, tolerance=30)

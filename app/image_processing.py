@@ -6,9 +6,10 @@ from math import atan2, cos, sin, sqrt, pi
 
 # import dip.image as im
 
-ISLAND_SIZE_TRESHOLD = 1000
-TRIANGLE_AREA_TRESHOLD = 5000
-CONTOUR_TRESHOLD = 13
+ISLAND_SIZE_TRESHOLD = 850
+TRIANGLE_AREA_TRESHOLD_MIN = 4000
+TRIANGLE_AREA_TRESHOLD_MAX = 8000
+CONTOUR_TRESHOLD = 17
 
 # otsu thresholding
 
@@ -566,11 +567,13 @@ def side_length(p1, p2):
   return np.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
 # Filter out triangles whose sides are longer than the threshold
-def filter_triangles(triangles, min_threshold=5, max_threshold=100, area_treshold=TRIANGLE_AREA_TRESHOLD):
+def filter_triangles(triangles, min_threshold=5, max_threshold=100, area_treshold=TRIANGLE_AREA_TRESHOLD_MAX):
   filtered_triangles = []
   for pts in triangles:
       triangle_area = cv2.contourArea(pts)
-      if triangle_area < area_treshold:
+      if triangle_area < TRIANGLE_AREA_TRESHOLD_MIN:
+        continue
+      if triangle_area > TRIANGLE_AREA_TRESHOLD_MAX:
         continue
       side_lengths = [side_length(pts[i], pts[(i+1)%3]) for i in range(3)]
       # print("side_lengths", side_lengths)

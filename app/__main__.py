@@ -109,7 +109,12 @@ def stream():
   session_start_time = time.time()
 
   while stream_on:
-    image = imutils.url_to_image(STREAM_SNAPSHOT)
+    try:
+      image = imutils.url_to_image(STREAM_SNAPSHOT)
+    except Exception as e:
+      print("exception", e)
+      continue
+    
     if time.time() - session_start_time >= RESTART_SECONDS and time.time() - start_time >= 90:
         print("RESTART BACKEND")
         os.execv(sys.executable, ['python'] + sys.argv)
