@@ -81,9 +81,9 @@ class Classifier:
       return False
     rect = cv2.minAreaRect(outer_contour)
     rice_area = cv2.contourArea(outer_contour)
-    print("Rice Area:", rice_area, MAX_RICE_AREA);
-    # only check max_rice_area in stream mode
-    if self.mode == 'stream' and rice_area < MAX_RICE_AREA:
+    print("Rice Area:", rice_area)
+    # only check rice_area in stream mode
+    if self.mode == 'stream' and (rice_area > MAX_RICE_AREA or rice_area < MIN_RICE_AREA):
       self.clear_vars()
       self.clear_layers()
       return False
@@ -105,6 +105,7 @@ class Classifier:
       img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
 
     inner_contours = getInnerIslands(img_binary_islands, outer_contour)
+    
     #if drawContours is not None:
       # self.add_layer("island_contours", "contours", inner_contours)
     
@@ -151,6 +152,7 @@ class Classifier:
     if lines_hori is not None:
       lines_hori = filter_lines_by_distance(lines_hori, min_distance=HORIZONTAL_MIN_DISTANCE)
       lines_hori = filter_lines_by_angle(lines_hori, angle-90, tolerance=30)
+      lines_hori = filter_lines_by_distance_to_contour(lines_hori, outer_contour, min_distance=MIN_DISTANCE_TO_CONTOUR)
       self.add_layer("lines_horizontal", "lines", lines_hori)
       self.lines_hori = lines_hori
       for line in lines_hori:

@@ -6,20 +6,24 @@ from math import atan2, cos, sin, sqrt, pi
 # import dip.image as im
 
 RESOLUTION = 1600
-MAX_RICE_AREA = int(0.3 * RESOLUTION * RESOLUTION)
+MAX_RICE_AREA = int(0.4 * RESOLUTION * RESOLUTION)
+MIN_RICE_AREA = int(0.1 * RESOLUTION * RESOLUTION)
 # vertical lines paramenters
 VERTICAL_THRESHOLD= int(0.2 * RESOLUTION)
 VERTICAL_MIN_LINE_LENGTH= int(0.2 * RESOLUTION)
-VERTICAL_MAX_LINE_GAP= int(0.7 * RESOLUTION) # higher the more detections
+VERTICAL_MAX_LINE_GAP= int(0.6 * RESOLUTION) # higher the more detections
 VERTICAL_MIN_DISTANCE=  int(0.2 * RESOLUTION)
 # horizontal line parameters
-HORIZONTAL_THRESHOLD= int(0.1 * RESOLUTION)
-HORIZONTAL_MIN_LINE_LENGTH= int(0.1 * RESOLUTION)
+HORIZONTAL_THRESHOLD= int(0.08 * RESOLUTION)
+HORIZONTAL_MIN_LINE_LENGTH= int(0.08 * RESOLUTION)
 HORIZONTAL_MAX_LINE_GAP= int(0.5 * RESOLUTION)
 HORIZONTAL_MIN_DISTANCE= int(0.1 * RESOLUTION)
+
+MIN_DISTANCE_TO_CONTOUR = int(0.05 * RESOLUTION)
+
 ISLAND_SIZE_TRESHOLD = 0.85 * RESOLUTION
-TRIANGLE_AREA_TRESHOLD_MIN = 4 * RESOLUTION
-TRIANGLE_AREA_TRESHOLD_MAX = 6 * RESOLUTION
+TRIANGLE_AREA_TRESHOLD_MIN = 5 * RESOLUTION
+TRIANGLE_AREA_TRESHOLD_MAX = 0.2 * RESOLUTION * RESOLUTION
 CONTOUR_TRESHOLD = 17
 
 # otsu thresholding
@@ -92,6 +96,7 @@ def getInnerIslands(img_binary, contour):
     # contours_inner = [c for c in contours_inner if cv2.contourArea(c) > 100 and cv2.contourArea(c) < 10000]
 
     contours_inner = filterIslandContours(contours_inner, aprox_outer)
+    contours_inner = filter_islands_by_distance_to_contour(contours_inner, contour)
 
     return contours_inner
 
@@ -118,6 +123,27 @@ def filterIslandContours(contours, aprox_outer):
 
     return filtered
 
+def filter_islands_by_distance_to_contour(islands, contour):
+    filtered = []
+
+    for c in islands:
+        # print("line1", line1)
+        if c is None:
+            continue
+        # get central point of c
+        M = cv2.moments(c)
+        cX = int(M["m10"]/M["m00"])
+        cY = int(M["m01"]/M["m00"])
+
+        is_valid = True
+        dis = cv2.pointPolygonTest(contour, (cX,cY), True)        
+        if dis < MIN_DISTANCE_TO_CONTOUR:
+            is_valid = False
+        # Add line to filtered list if it passes all checks
+        if is_valid:
+            filtered.append(c)
+
+    return filtered
 
 def drawIslandDetections(img_out, contours):
     for c in contours:
@@ -250,6 +276,24 @@ def detect_trace(image, threshold=50, minLineLength=500, maxLineGap=500):
     vector = np.array([x2-x1, y2-y1])
     return lines
 
+
+def filter_lines_by_distance_to_contour(lines, contour, min_distance=10):
+    filtered_lines = []
+    for i, line1 in enumerate(lines):
+        # print("line1", line1)
+        if line1 is None:
+            continue
+        x1, y1, x2, y2 = line1[0]
+        x = (x1 + x2) / 2
+        y = (y1 + y2) / 2
+        is_valid = True
+        dis = cv2.pointPolygonTest(contour, (x,y), True)        
+        if dis < MIN_DISTANCE_TO_CONTOUR:
+            is_valid = False
+        # Add line to filtered list if it passes all checks
+        if is_valid:
+            filtered_lines.append(line1)
+    return filtered_lines
 
 def filter_lines_by_distance(lines, min_distance=10):
     filtered_lines = []

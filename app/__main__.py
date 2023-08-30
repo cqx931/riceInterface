@@ -68,6 +68,8 @@ specific_category = args.specific_category
 classifier_mode = "dataset"
 if args.test:
   classifier_mode = "test"
+elif args.stream:
+  classifier_mode = "stream"
 else:
   classifier_mode = "default"
 
@@ -160,6 +162,7 @@ def stream():
       
       # if it's stable
       lastFrame = image
+      # draw layers
       img_out = classifier.draw_elements(image)
     # print(has_rice, sent_results , time.time() - start_time)
     if has_rice:
