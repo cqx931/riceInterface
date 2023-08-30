@@ -17,6 +17,7 @@ from image_processing import image_diff
 import time
 from categories import detect_category
 import sys
+import requests
 
 IMAGE_DIFF_THRESHOLD = 0.02
 
@@ -41,7 +42,6 @@ RESTART_SECONDS = 60*5 # 60*5
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
 
 conter = 0
-resolution = 1600
 # default values
 # foo = 0
 
@@ -107,6 +107,7 @@ def stream():
   lastFrame = None
   sent_results = False
   has_rice = False
+  has_rotated = False
   session_start_time = time.time()
 
   while stream_on:
@@ -132,7 +133,6 @@ def stream():
         start_time = sessin_start_time
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate
         print("resolution:", image.shape[0],image.shape[1])
-        resolution = image.shape[0]
         found = classifier.process(image)
         if found:
           print("found rice")
@@ -140,27 +140,44 @@ def stream():
         else:
           print("no rice")
         has_rice = found
-
+      # end of first frame
       # first check if the frames are diff enough, only compute when its stable
       if image_diff(lastFrame, image) > IMAGE_DIFF_THRESHOLD:
         print("diff", image_diff(lastFrame, image))
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate
         found = classifier.process(image)
         has_rice = found
+        sent_results = False
         if found:
           print("found rice")
           sendLayers()
-          start_time = time.time()
+          start_time = time.time() # everytime the frame is diff and there is a rice, restart timer
         else:
           print("no rice")
           #if there is no rice in a new frame !
           sendClear() # clear front end
-          sent_results = False
+          # sent_results = False
+      
+      # if it's stable
       lastFrame = image
       img_out = classifier.draw_elements(image)
     # print(has_rice, sent_results , time.time() - start_time)
-    if has_rice and sent_results == False and time.time() - start_time > INTERVAL_SECONDS:
-      sent_results = sendResults()
+    if has_rice:
+      # if the image is stabe for INTERVAL_SECONDS time, then send rersults 
+      # print("Timer:", time.time() - start_time > INTERVAL_SECONDS, sent_results)
+      if time.time() - start_time > INTERVAL_SECONDS:
+        # ok is stable
+        rotation_angle = classifier.get_angle()
+        if (rotation_angle > 15 or rotation_angle < -15) and has_rotated == False:
+          print("rotate", rotation_angle, has_rotated)
+          sendMessage(rotation_angle)
+          has_rotated = True
+          start_time = time.time()
+        
+        if sent_results == False:
+          print("send result")
+          sent_results = sendResults()
+          has_rotated = False
 
     cv2.imshow("out", img_out)
     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -267,6 +284,12 @@ def sendLayers():
 def sendClear():
   socketio_client.sendMessage('clear', "")
   print("send clear!")
+
+def sendMessage(text):
+  url = "http://192.168.1.22:5000/rotate?angle=" + str(text)
+  response = requests.get(url)
+  print(url) 
+  return
 
 # run!
 init()

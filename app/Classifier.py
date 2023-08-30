@@ -4,22 +4,8 @@ from Debug import debug
 from image_processing import *
 import json
 from utils import *
-import requests
 LINES_PERC = 10
 ISLAND_PERC = 6
-
-
-MAX_RICE_AREA = 50000
-# vertical lines paramenters
-VERTICAL_THRESHOLD=200
-VERTICAL_MIN_LINE_LENGTH=200
-VERTICAL_MAX_LINE_GAP=700 # higher the more detections
-VERTICAL_MIN_DISTANCE=200
-# horizontal line parameters
-HORIZONTAL_THRESHOLD=50
-HORIZONTAL_MIN_LINE_LENGTH=80
-HORIZONTAL_MAX_LINE_GAP=2000
-HORIZONTAL_MIN_DISTANCE=100
 
 class Classifier:
 
@@ -27,7 +13,6 @@ class Classifier:
   results = {}
   order = []
   layers = []
-
   outer_contour = []
   island_circles = []
   inner_contours = []
@@ -39,6 +24,8 @@ class Classifier:
   intersection_points = []
   horizontal_intersection_points = []
   triangle_faults = []
+
+  rotation_angle = 0
 
   def __init__(self, mode):
     #self.model = mode
@@ -138,12 +125,11 @@ class Classifier:
     # ---------------------------------------------- #
     
     angle = int(np.rad2deg(getOrientation(outer_contour, img_out)))
-    rotation_angle = 45-angle
+    self.rotation_angle = 45-angle
     print("Current angle:", angle)
-    print("Rotate:", rotation_angle)
-    if(rotation_angle > 15 or rotation_angle < -15):
+    if(self.rotation_angle > 15 or self.rotation_angle < -15):
       #sendMessage(rotation_angle)
-      return
+      return True
       # continue when rotation is no longer needed
 
     # vertical line
@@ -332,6 +318,9 @@ class Classifier:
     self.img_out = img_input.copy()
     cv2.putText(self.img_out, "test", (200,200), cv2.FONT_HERSHEY_SIMPLEX, 10, (255,0,0), 2)
     return self.img_out
+  
+  def get_angle(self):
+    return self.rotation_angle
 
   def clear_layers(self):
     self.layers.clear()
@@ -349,9 +338,3 @@ class Classifier:
     self.intersection_points = []
     self.horizontal_intersection_points = []
     self.triangle_faults = []
-
-def sendMessage(text):
-  url = "http://192.168.1.22:5000/rotate?angle=" + str(text)
-  response = requests.get(url)
-  print(url) 
-  return
