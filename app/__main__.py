@@ -32,15 +32,16 @@ DATASET_PATH = os.environ.get("DATASET_PATH")
 TEST_IMAGE_PATH = os.environ.get("TEST_IMAGE_PATH")
 DATASET_EXPORT_PATH = "dataset_export/"
 RASPBERRY_PI = "192.168.1.22"
-STREAM_SNAPSHOT = "http://" + RASPBERRY_PI + ":8080/?action=snapshot"
-
+STREAM_SNAPSHOT = "http://" + RASPBERRY_PI + ":8080/snapshot"
+# ustreamer: /snapshot
+# old mjg-streamer: ?action=snapshot
 INTERVAL_SECONDS = 2
 RESTART_SECONDS = 60*5 # 60*5
 # full server url for connection to the socket
 # server_url = "http://{}:{}/".format(SOCKET_SERVER_IP, SOCKET_SERVER_PORT)
 
 conter = 0
-
+resolution = 1600
 # default values
 # foo = 0
 
@@ -130,21 +131,28 @@ def stream():
         sessin_start_time = time.time()
         start_time = sessin_start_time
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate
+        print("resolution:", image.shape[0],image.shape[1])
+        resolution = image.shape[0]
         found = classifier.process(image)
         if found:
+          print("found rice")
           sendLayers()
+        else:
+          print("no rice")
         has_rice = found
 
       # first check if the frames are diff enough, only compute when its stable
-      # print("diff", image_diff(lastFrame, image))
       if image_diff(lastFrame, image) > IMAGE_DIFF_THRESHOLD:
+        print("diff", image_diff(lastFrame, image))
         classifier.clear_layers() # need to clear the data everytime so it doesnt accumulate
         found = classifier.process(image)
         has_rice = found
         if found:
+          print("found rice")
           sendLayers()
           start_time = time.time()
         else:
+          print("no rice")
           #if there is no rice in a new frame !
           sendClear() # clear front end
           sent_results = False

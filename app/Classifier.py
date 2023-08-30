@@ -4,12 +4,12 @@ from Debug import debug
 from image_processing import *
 import json
 from utils import *
-
+import requests
 LINES_PERC = 10
 ISLAND_PERC = 6
 
 
-MIN_RICE_AREA = 50000
+MAX_RICE_AREA = 50000
 # vertical lines paramenters
 VERTICAL_THRESHOLD=200
 VERTICAL_MIN_LINE_LENGTH=200
@@ -69,10 +69,10 @@ class Classifier:
       if layer["name"] == name:
         return layer["data"]
     return []
-  
+   
+
   # process image
   def process(self, img_raw):
-    
     img_out = img_raw.copy()
     if (len(img_out.shape) == 1):
       img_out = cv2.cvtColor(img_out,cv2.COLOR_GRAY2BGR)
@@ -94,8 +94,9 @@ class Classifier:
       return False
     rect = cv2.minAreaRect(outer_contour)
     rice_area = cv2.contourArea(outer_contour)
-    # only check min_rice_area in stream mode
-    if self.mode == 'stream' and rice_area < MIN_RICE_AREA:
+    print("Rice Area:", rice_area, MAX_RICE_AREA);
+    # only check max_rice_area in stream mode
+    if self.mode == 'stream' and rice_area < MAX_RICE_AREA:
       self.clear_vars()
       self.clear_layers()
       return False
@@ -136,7 +137,14 @@ class Classifier:
     # crack lines
     # ---------------------------------------------- #
     
-    angle = np.rad2deg(getOrientation(outer_contour, img_out)) 
+    angle = int(np.rad2deg(getOrientation(outer_contour, img_out)))
+    rotation_angle = 45-angle
+    print("Current angle:", angle)
+    print("Rotate:", rotation_angle)
+    if(rotation_angle > 15 or rotation_angle < -15):
+      #sendMessage(rotation_angle)
+      return
+      # continue when rotation is no longer needed
 
     # vertical line
     self.lines_vert = []
@@ -341,3 +349,9 @@ class Classifier:
     self.intersection_points = []
     self.horizontal_intersection_points = []
     self.triangle_faults = []
+
+def sendMessage(text):
+  url = "http://192.168.1.22:5000/rotate?angle=" + str(text)
+  response = requests.get(url)
+  print(url) 
+  return

@@ -427,7 +427,7 @@ def embrio_check(img, outer_contour):
             continue
         pts = np.array([triangle[1][0][0], triangle[1][1][0], triangle[1][2][0]]).astype(int)
         triangle_area = cv2.contourArea(pts)
-        print("triangle_area", triangle_area)
+        # print("triangle_area", triangle_area)
         # Draw the triangle on the original image
         faults_triangles.append(pts)
         radius = int(cv2.pointPolygonTest(fault_contour, centerPoint, True))
