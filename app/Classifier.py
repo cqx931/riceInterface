@@ -17,6 +17,7 @@ class Classifier:
   island_circles = []
   inner_contours = []
   lines_hori = []
+  lines_half_hori = []
   lines_vert = []
   intersecting_circles = []
   non_intersecting_circles = []
@@ -26,6 +27,8 @@ class Classifier:
   triangle_faults = []
 
   rotation_angle = 0
+  width = 0
+  height = 0
 
   def __init__(self, mode):
     #self.model = mode
@@ -79,9 +82,18 @@ class Classifier:
       self.clear_vars()
       self.clear_layers()
       return False
-    rect = cv2.minAreaRect(outer_contour)
+
     rice_area = cv2.contourArea(outer_contour)
     print("Rice Area:", rice_area)
+    rect = cv2.minAreaRect(outer_contour)
+    (x,y), (w,h), a = rect
+    if (w > h):
+      self.width = int(h)
+      self.height = int(w)
+    else:
+      self.width = int(w)
+      self.height = int(h)
+    print("Width:",self.width, "Height:", self.height)
     # only check rice_area in stream mode
     if self.mode == 'stream' and (rice_area > MAX_RICE_AREA or rice_area < MIN_RICE_AREA):
       self.clear_vars()
@@ -148,15 +160,22 @@ class Classifier:
     
     # horizontal line
     self.lines_hori = []
+    self.lines_half_hori = []
     lines_hori = detect_trace(img_binary_lines, threshold=HORIZONTAL_THRESHOLD, minLineLength=HORIZONTAL_MIN_LINE_LENGTH, maxLineGap=HORIZONTAL_MAX_LINE_GAP)
     if lines_hori is not None:
       lines_hori = filter_lines_by_distance(lines_hori, min_distance=HORIZONTAL_MIN_DISTANCE)
       lines_hori = filter_lines_by_angle(lines_hori, angle-90, tolerance=30)
       lines_hori = filter_lines_by_distance_to_contour(lines_hori, outer_contour, min_distance=MIN_DISTANCE_TO_CONTOUR)
       self.add_layer("lines_horizontal", "lines", lines_hori)
+      # further devided horizontal lines to full and half
+      if len(lines_hori) >=3:
+        lines_hori, lines_half_hori = filter_lines_by_length(lines_hori, self.width/2)
+        self.lines_half_hori = lines_half_hori
+
       self.lines_hori = lines_hori
-      for line in lines_hori:
-        x1, y1, x2, y2 = line[0]
+      
+      # for line in lines_hori:
+      #   x1, y1, x2, y2 = line[0]
         # drawAxis(img_out, (x1, y1), (x2, y2), (0, 255, 255), 5)
         # cv2.line(img_out, (x1, y1), (x2, y2), (0, 0, 255), 2)
 

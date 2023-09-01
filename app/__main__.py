@@ -13,13 +13,15 @@ from Debug import debug
 from socket_connection import SocketClient
 from Interpreter import Interpreter
 # standard Python
-from image_processing import image_diff
+from image_processing import image_diff, RESOLUTION
 import time
 from categories import detect_category
 import sys
 import requests
 
-IMAGE_DIFF_THRESHOLD = 0.02
+IMAGE_DIFF_THRESHOLD = 0.015
+
+SECONDS_PER_ANGLE = 30 / 180
 
 socketio_client = SocketClient()
 socketio_client.connect("http://localhost:3000")
@@ -111,16 +113,27 @@ def stream():
   has_rice = False
   has_rotated = False
   session_start_time = time.time()
+  start_time = 0
+  last_rotation_time = 0 # after rotation is done
+  current_rotation_waiting_time = 0
 
   while stream_on:
     try:
-      image = imutils.url_to_image(STREAM_SNAPSHOT)
+      print("img request", time.time() - session_start_time)
+      raw = imutils.url_to_image(STREAM_SNAPSHOT)
+      image = cv2.resize(raw, (RESOLUTION, RESOLUTION))
     except Exception as e:
       print("exception", e)
+      continue
+    if time.time() - last_rotation_time < 2:
+      print("waiting for rotation!")
+      img_out = image
+      cv2.imshow("out", img_out)
       continue
     
     if time.time() - session_start_time >= RESTART_SECONDS and time.time() - start_time >= 90:
         print("RESTART BACKEND")
+        sendMessage(180) # rotate the rice for 180
         os.execv(sys.executable, ['python'] + sys.argv)
     if np.array_equal(image, lastFrame) :
       img_out = image
@@ -176,6 +189,8 @@ def stream():
           sendMessage(rotation_angle)
           has_rotated = True
           start_time = time.time()
+          last_rotation_time = time.time()
+          current_rotation_waiting_time = abs(rotation_angle) * SECONDS_PER_ANGLE + 1
         
         if sent_results == False:
           print("send result")
@@ -290,8 +305,8 @@ def sendClear():
 
 def sendMessage(text):
   url = "http://192.168.1.22:5000/rotate?angle=" + str(text)
-  response = requests.get(url)
-  print(url) 
+  requests.get(url)
+  
   return
 
 # run!

@@ -2,10 +2,10 @@
 import cv2
 import numpy as np
 from utils import ccw
-from math import atan2, cos, sin, sqrt, pi
+from math import atan2, cos, sin, sqrt, pi, dist
 # import dip.image as im
 
-RESOLUTION = 1600
+RESOLUTION = 800
 MAX_RICE_AREA = int(0.4 * RESOLUTION * RESOLUTION)
 MIN_RICE_AREA = int(0.1 * RESOLUTION * RESOLUTION)
 # vertical lines paramenters
@@ -22,8 +22,8 @@ HORIZONTAL_MIN_DISTANCE= int(0.1 * RESOLUTION)
 MIN_DISTANCE_TO_CONTOUR = int(0.05 * RESOLUTION)
 
 ISLAND_SIZE_TRESHOLD = 0.85 * RESOLUTION
-TRIANGLE_AREA_TRESHOLD_MIN = 5 * RESOLUTION
-TRIANGLE_AREA_TRESHOLD_MAX = 0.2 * RESOLUTION * RESOLUTION
+TRIANGLE_AREA_TRESHOLD_MIN = 0.01 * RESOLUTION * RESOLUTION
+TRIANGLE_AREA_TRESHOLD_MAX = 0.15 * RESOLUTION * RESOLUTION
 CONTOUR_TRESHOLD = 17
 
 # otsu thresholding
@@ -317,6 +317,19 @@ def filter_lines_by_distance(lines, min_distance=10):
             filtered_lines.append(line1)
     return filtered_lines
 
+def filter_lines_by_length(lines, half_length):
+    # print("ref_angle", ref_angle)
+    # ref_angle = np.rad2deg(ref_angle)
+    full = []
+    half = []
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        l = dist([x1,y1], [x2,y2])
+        if l > half_length:
+            full.append(line)
+        else:
+            half.append(line)
+    return full, half
 
 def filter_lines_by_angle(lines, ref_angle, tolerance=50):
     # print("ref_angle", ref_angle)
@@ -612,10 +625,14 @@ def line_circle_intersection(line, circle):
             return False
 
 def image_diff(img1, img2):
-  diff = cv2.absdiff(img1, img2)
-  diff_norm = cv2.normalize(diff, None, 0, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-  diff_mean = cv2.mean(diff_norm)[0]
-  return diff_mean
+    try:
+        diff = cv2.absdiff(img1, img2)
+        diff_norm = cv2.normalize(diff, None, 0, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+        diff_mean = cv2.mean(diff_norm)[0]
+        return diff_mean
+    except Exception as e:
+        print("exception", e)
+        return 1
 
 # Calculate the length of a side given the coordinates of its endpoints
 def side_length(p1, p2):
