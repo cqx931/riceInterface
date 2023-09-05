@@ -119,7 +119,7 @@ def stream():
 
   while stream_on:
     try:
-      print("img request", time.time() - session_start_time)
+      #print("img request", time.time() - session_start_time)
       raw = imutils.url_to_image(STREAM_SNAPSHOT)
       image = cv2.resize(raw, (RESOLUTION, RESOLUTION))
     except Exception as e:
