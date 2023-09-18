@@ -19,7 +19,7 @@ from categories import detect_category
 import sys
 import requests
 
-IMAGE_DIFF_THRESHOLD = 0.015
+IMAGE_DIFF_THRESHOLD = 0.019
 
 SECONDS_PER_ANGLE = 30 / 180
 
@@ -133,7 +133,9 @@ def stream():
     
     if time.time() - session_start_time >= RESTART_SECONDS and time.time() - start_time >= 90:
         print("RESTART BACKEND")
+        # TODO: this idle restart time doesnt seem correct
         sendMessage(180) # rotate the rice for 180
+        sendClear()
         os.execv(sys.executable, ['python'] + sys.argv)
     if np.array_equal(image, lastFrame) :
       img_out = image
